@@ -1,0 +1,104 @@
+﻿@using ReChart.Logic;
+
+<div class="simple-form">
+    <div class="card-header">
+        Keyboard Configurations
+    </div>
+    <div class="card-body">
+        <div class="accordion accordion-flush" id="accordionFlushKeyConfigs">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="flush-headingBeats">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseBeats" aria-expanded="false" aria-controls="flush-collapseBeats">
+                        Beats
+                    </button>
+                </h2>
+                <div id="flush-collapseBeats" class="accordion-collapse collapse" aria-labelledby="flush-headingBeats" data-bs-parent="#accordionFlushKeyConfigs">
+                    <div class="row">
+                        @foreach (var beatConfig in Settings.Configurations.KeyConfigs.Beats)
+                        {
+                            <div class="form-group col-3" style="padding-top: 5px;">
+                                <label for="beat-@(beatConfig.Key)-value"><b>@beatConfig.Key:</b></label>
+                                <input type="text" class="form-control" id="beat-@(beatConfig.Key)-value" style="width: 30%; text-align: right; float: right; display: inline;" maxlength="1" value="@beatConfig.Value"
+                                       @onchange="@((ChangeEventArgs e) => ChangeBeatConfig(e, beatConfig.Key))" />
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="flush-headingDisplays">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseDisplays" aria-expanded="false" aria-controls="flush-collapseDisplays">
+                        Displays
+                    </button>
+                </h2>
+                <div id="flush-collapseDisplays" class="accordion-collapse collapse" aria-labelledby="flush-headingDisplays" data-bs-parent="#accordionFlushKeyConfigs">
+                    <div class="row">
+                        @foreach (var displayConfig in this.Chart.Displays)
+                        {
+                            <div class="form-group col-3" style="padding-top: 5px;">
+                                <label for="display-@(displayConfig.Key)-value"><b>@displayConfig.Key:</b></label>
+                                <input type="text" class="form-control" id="display-@(displayConfig.Key)-value" style="width: 30%; text-align: right; float: right; display: inline;" maxlength="1" value="@displayConfig.Value"
+                                       @onchange="@((ChangeEventArgs e) => ChangeDisplayConfig(e, displayConfig.Key))" />
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="flush-headingNotes">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseNotes" aria-expanded="false" aria-controls="flush-collapseNotes">
+                        Notes
+                    </button>
+                </h2>
+                <div id="flush-collapseNotes" class="accordion-collapse collapse" aria-labelledby="flush-headingNotes" data-bs-parent="#accordionFlushKeyConfigs">
+                    <div class="row" style="height: 20vw; overflow-y: auto;">
+                        @foreach (var noteConfig in this.Chart.Notes)
+                        {
+                            <div class="form-group col-6" style="padding-top: 5px;">
+                                <label for="note-@(noteConfig.Key)-value"><b>@noteConfig.Key:</b></label>
+                                <input type="text" class="form-control" id="note-@(noteConfig.Key)-value" style="width: 30%; text-align: right; float: right; display: inline;" maxlength="1" value="@noteConfig.Value" @onchange="@((ChangeEventArgs e) => ChangeNoteConfig(e, noteConfig.Key))" />
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <br />
+    <button @onclick="SaveOptions" class="btn btn-primary">Save Options</button>
+    <button @onclick="@(async () => await this.ModalInstance.CancelAsync())" class="btn btn-secondary">Cancel</button>
+</div>
+
+@code {
+
+    [CascadingParameter] BlazoredModalInstance ModalInstance { get; set; }
+
+    [Parameter] public Chart Chart { get; set; }
+
+    protected override void OnInitialized()
+    {
+    }
+
+    protected async Task SaveOptions()
+    {
+        Settings.SaveSettings();
+
+        await this.ModalInstance.CloseAsync(ModalResult.Ok<EditOptions>(this));
+    }
+
+    protected void ChangeBeatConfig(ChangeEventArgs e, string key)
+    {
+        Settings.Configurations.KeyConfigs.Beats[key] = e.Value.ToString();
+    }
+
+    protected void ChangeDisplayConfig(ChangeEventArgs e, string key)
+    {
+        this.Chart.Displays[key] = e.Value.ToString();
+    }
+
+    protected void ChangeNoteConfig(ChangeEventArgs e, string key)
+    {
+        this.Chart.Notes[key] = e.Value.ToString();
+    }
+}

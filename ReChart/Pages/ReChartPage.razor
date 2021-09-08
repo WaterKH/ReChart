@@ -1,0 +1,204 @@
+﻿@page "/"
+@page "/rechart"
+
+@using MoMMusicAnalysis;
+@using Microsoft.Extensions.Logging;
+@using ReChart.Interfaces;
+@using ReChart.Logic;
+
+@inject ILogger<ReChartPage> logger
+@inject IBlazorDownloadFileService BlazorDownloadFileService
+
+@inject IFieldChartService FieldChartService
+@inject IMemoryChartService MemoryChartService
+@inject IBossChartService BossChartService
+
+
+<div id="rechart-buttons" style="margin-top: 5px;">
+    <div class="row">
+        <div class="col-md-4">
+            <button type="button" class="btn btn-primary" @onclick="ShowLoadSong" style="float: left; margin-left: 5px;">Load Song</button>
+        </div>
+        <div class="col-md-4"></div>
+        <div class="col-md-4">
+            <button type="button" class="btn btn-success" @onclick="SaveSong" style="float: right; margin-left: 5px;">Save Song</button>
+        </div>
+    </div>
+</div>
+
+<br />
+
+@if (!string.IsNullOrEmpty(this.fileName) && (this.FieldChartService.GetMusicFile() != null || this.MemoryChartService.GetMusicFile() != null || this.BossChartService.GetMusicFile() != null))
+{
+    <div id="rechart-content">
+        <TabControl @ref="DifficultyControl">
+            <TabPage ImagePath="images/ReChart/Beginner.png">
+                @if (this.FieldChartService.GetMusicFile() != null)
+                {
+                    <FieldChart Id="chart-beginner" Difficulty="Difficulty.Beginner" DisplayNotes="@this.FieldChartService.GetDisplayNotes(Difficulty.Beginner)" SongTitle="@this.GetSongTitle()" />
+                }
+                else if (this.MemoryChartService.GetMusicFile() != null)
+                {
+                    <MemoryChart Id="chart-beginner" Difficulty="Difficulty.Beginner" DisplayNotes="@this.MemoryChartService.GetDisplayNotes(Difficulty.Beginner)" SongTitle="@this.GetSongTitle()" />
+                }
+                else if (this.BossChartService.GetMusicFile() != null)
+                {
+                    <BossChart Id="chart-beginner" Difficulty="Difficulty.Beginner" DisplayNotes="@this.BossChartService.GetDisplayNotes(Difficulty.Beginner)" SongTitle="@this.GetSongTitle()" />
+                }
+            </TabPage>
+            <TabPage ImagePath="images/ReChart/Standard.png">
+                @if (this.FieldChartService.GetMusicFile() != null)
+                {
+                    <FieldChart Id="chart-standard" Difficulty="Difficulty.Standard" DisplayNotes="@this.FieldChartService.GetDisplayNotes(Difficulty.Standard)" SongTitle="@this.GetSongTitle()" />
+                }
+                else if (this.MemoryChartService.GetMusicFile() != null)
+                {
+                    <MemoryChart Id="chart-standard" Difficulty="Difficulty.Standard" DisplayNotes="@this.MemoryChartService.GetDisplayNotes(Difficulty.Standard)" SongTitle="@this.GetSongTitle()" />
+                }
+                else if (this.BossChartService.GetMusicFile() != null)
+                {
+                    <BossChart Id="chart-standard" Difficulty="Difficulty.Standard" DisplayNotes="@this.BossChartService.GetDisplayNotes(Difficulty.Standard)" SongTitle="@this.GetSongTitle()" />
+                }
+            </TabPage>
+            <TabPage ImagePath="images/ReChart/Proud.png">
+                @if (this.FieldChartService.GetMusicFile() != null)
+                {
+                    <FieldChart Id="chart-proud" Difficulty="Difficulty.Proud" DisplayNotes="@this.FieldChartService.GetDisplayNotes(Difficulty.Proud)" SongTitle="@this.GetSongTitle()" />
+                }
+                else if (this.MemoryChartService.GetMusicFile() != null)
+                {
+                    <MemoryChart Id="chart-proud" Difficulty="Difficulty.Proud" DisplayNotes="@this.MemoryChartService.GetDisplayNotes(Difficulty.Proud)" SongTitle="@this.GetSongTitle()" />
+                }
+                else if (this.BossChartService.GetMusicFile() != null)
+                {
+                    <BossChart Id="chart-proud" Difficulty="Difficulty.Proud" DisplayNotes="@this.BossChartService.GetDisplayNotes(Difficulty.Proud)" SongTitle="@this.GetSongTitle()" />
+                }
+            </TabPage>
+        </TabControl>
+    </div>
+}
+
+@code {
+    [CascadingParameter] public IModalService Modal { get; set; }
+
+    public MusicFile MusicFile { get; set; }
+
+    public TabControl DifficultyControl { get; set; } = new TabControl();
+
+    private bool generateDevFile { get; set; }
+    private string fileName { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        //this.KeyDown += this.main_KeyDown;
+    }
+
+    private void LoadFile(string fileName)
+    {
+        this.fileName = fileName;
+
+        this.GenerateMusicFile();
+        this.SetupCharts();
+    }
+
+    protected void GenerateMusicFile()
+    {
+        this.MusicFile = null;
+        // Call a clear on the UI?
+
+        this.MusicFile = new SongProcessor().ProcessSong(this.fileName, true);// this.generateDevFile);
+    }
+
+    private async Task ShowLoadSong()
+    {
+        IModalReference editModal;
+        var parameters = new ModalParameters();
+        var options = new ModalOptions()
+        {
+            Animation = ModalAnimation.FadeInOut(0.2)
+        };
+
+        editModal = Modal.Show<LoadSong>($"Load Song", parameters, options);
+        var result = await editModal.Result;
+
+        if (!result.Cancelled)
+        {
+            this.LoadFile((string)result.Data);
+        }
+    }
+
+    private async Task SaveSong()
+    {
+        try
+        {
+            List<byte> song = null;
+
+            if (this.FieldChartService.GetMusicFile() != null)
+                song = this.FieldChartService.RecompileFieldBattleSongs();
+            else if (this.MemoryChartService.GetMusicFile() != null)
+                song = this.MemoryChartService.RecompileMemoryDiveSongs();
+            else if (this.BossChartService.GetMusicFile() != null)
+                song = this.BossChartService.RecompileBossBattleSongs();
+
+            if (song.Count > 0)
+            {
+                await BlazorDownloadFileService.DownloadFile($"{this.fileName}.recomp", song, contentType: "application/octet-stream");
+
+                //ToastService.ShowSuccess("Successfully Exported File!");
+            }
+            else
+            {
+                //ToastService.ShowError("Error Exporting File..");
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, $"Error Saving: {ex.Message}");
+        }
+    }
+
+    protected void SetupCharts()
+    {
+        this.ClearChartManagers();
+
+        if (this.MusicFile.SongPositions.FirstOrDefault().Value.SongType == SongType.FieldBattle)
+            this.FieldChartService.Initialize(this.MusicFile);
+        else if (this.MusicFile.SongPositions.FirstOrDefault().Value.SongType == SongType.MemoryDive)
+            this.MemoryChartService.Initialize(this.MusicFile);
+        else if (this.MusicFile.SongPositions.FirstOrDefault().Value.SongType == SongType.BossBattle)
+            this.BossChartService.Initialize(this.MusicFile);
+    }
+
+    private void ClearChartManagers()
+    {
+        this.FieldChartService.Deinitialize();
+        this.MemoryChartService.Deinitialize();
+        this.BossChartService.Deinitialize();
+    }
+
+    protected string GetSongTitle()
+    {
+        if (string.IsNullOrEmpty(fileName))
+            return string.Empty;
+
+        var fieldSong = Settings.Configurations.Songs.FieldBattle.FirstOrDefault(x => x.Key == fileName.Substring(fileName.Length - 3, 3)).Value;
+        if (!string.IsNullOrEmpty(fieldSong))
+            return fieldSong;
+
+        var memorySong = Settings.Configurations.Songs.MemoryDive.FirstOrDefault(x => x.Key == fileName.Substring(fileName.Length - 3, 3)).Value;
+        if (!string.IsNullOrEmpty(memorySong))
+            return memorySong;
+
+        var bossSong = Settings.Configurations.Songs.BossBattle.FirstOrDefault(x => x.Key == fileName.Substring(fileName.Length - 3, 3)).Value;
+        if (!string.IsNullOrEmpty(bossSong))
+            return bossSong;
+
+        var coopSong = Settings.Configurations.Songs.CoOp.FirstOrDefault(x => x.Key == fileName.Substring(fileName.Length - 3, 3)).Value;
+        if (!string.IsNullOrEmpty(coopSong))
+            return coopSong;
+
+        return string.Empty;
+    }
+}

@@ -1,0 +1,52 @@
+﻿<ul class="nav nav-@(this.TabType == "Pills" ? "pills" : "tabs")">
+    @foreach (TabPage tabPage in this.Pages)
+    {
+        @if (!string.IsNullOrEmpty(tabPage.ImagePath))
+        {
+        <li class="nav-item">
+            <a class="nav-link @GetButtonClass(tabPage)" href="#" @onclick=@(() => ActivatePage(tabPage)) @onclick:preventDefault><img src="@tabPage.ImagePath" width="25"></a>
+        </li>
+        }
+        else
+        {
+        <li class="nav-item">
+            <a class="nav-link @GetButtonClass(tabPage)" href="#" @onclick=@(() => ActivatePage(tabPage)) @onclick:preventDefault>@tabPage.Name</a>
+        </li>
+        }
+    }
+</ul>
+
+<CascadingValue Value="this">
+    @ChildContent
+</CascadingValue>
+
+@code {
+    [Parameter] public RenderFragment ChildContent { get; set; }
+    [Parameter] public string TabType { get; set; } = "Tabs";
+
+    public TabPage ActivePage { get; set; }
+
+    public List<TabPage> Pages = new List<TabPage>();
+
+    protected internal void AddPage(TabPage tabPage)
+    {
+        this.Pages.Add(tabPage);
+
+        if (!string.IsNullOrEmpty(tabPage.ImagePath))
+            this.ActivePage = this.Pages.FirstOrDefault(x => x.ImagePath.ToLower().Contains("proud"));
+        else
+            this.ActivePage = this.Pages.FirstOrDefault();
+
+        StateHasChanged();
+    }
+
+    protected string GetButtonClass(TabPage page)
+    {
+        return page == this.ActivePage ? "active" : "";
+    }
+
+    public void ActivatePage(TabPage page)
+    {
+        this.ActivePage = page;
+    }
+}

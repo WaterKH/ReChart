@@ -1,0 +1,77 @@
+﻿@using MoMMusicAnalysis;
+@using ReChart.Interfaces;
+
+@inject IMemoryChartService MemoryChartService
+
+<div class="simple-form">
+
+    <div class="form-group" style="padding: 5px;">
+        <label for="note-time-value"><b>Time (in ms):</b></label>
+        <input @bind="@this.PerformerNoteCopy.HitTime" type="text" class="form-control" id="note-time-value" style="width: 15%; text-align: right; display: inline;" />
+    </div>
+
+    <div class="form-group" style="padding: 5px;">
+        <label for="note-lane"><b>Lane:</b></label>
+        <select class="form-select" aria-label="note-lane" style="display: inline; width: 25%" @bind="this.PerformerNoteCopy.Lane">
+            <option selected>Select Lane...</option>
+            @foreach (MemoryLane lane in Enum.GetValues(typeof(MemoryLane)))
+            {
+                <option value="@lane">@lane.ToString()</option>
+            }
+        </select>
+    </div>
+
+    <div class="form-group" style="padding: 5px;">
+        <label for="note-model-value"><b>Model:</b></label>
+        <NoteChoices Type="PerformerNote" ImageTypes="@this.AllPerformerTypes" @bind-ActiveNote="@this.SelectedNoteType" SelectedNoteTypeChanged="SelectedNoteTypeChanged" />
+    </div>
+
+    <br />
+    <button @onclick="SavePerformerNote" class="btn btn-primary">Save</button>
+    <button @onclick="DeletePerformerNote" class="btn btn-danger">Delete</button>
+    <button @onclick="@(async () => await this.ModalInstance.CancelAsync())" class="btn btn-secondary" style="float: right;">Cancel</button>
+</div>
+
+@code {
+
+    [CascadingParameter] BlazoredModalInstance ModalInstance { get; set; }
+
+    [Parameter] public int PerformerNoteId { get; set; }
+    [Parameter] public Dictionary<string, string> AllPerformerTypes { get; set; }
+    [Parameter] public Difficulty Difficulty { get; set; }
+
+    PerformerNote<MemoryLane> PerformerNote;
+    private PerformerNote<MemoryLane> PerformerNoteCopy { get; set; }
+
+    private string SelectedNoteType { get; set; }
+
+    protected override void OnInitialized()
+    {
+        this.PerformerNote = this.MemoryChartService.LoadMemoryPerformerNote(this.Difficulty, this.PerformerNoteId);
+        this.PerformerNoteCopy = this.PerformerNote.Copy();
+
+        this.SelectedNoteType = this.PerformerNote.PerformerType.ToString();
+    }
+
+    void SavePerformerNote()
+    {
+        this.MemoryChartService.SavePerformerNote(ref this.PerformerNote, this.PerformerNoteCopy);
+
+        this.ModalInstance.CloseAsync(ModalResult.Ok<PerformerNote<MemoryLane>>(this.PerformerNote));
+    }
+
+    private async Task DeletePerformerNote()
+    {
+        this.MemoryChartService.RemovePerformerNote(this.Difficulty, this.PerformerNoteId);
+
+        await this.ModalInstance.CloseAsync(ModalResult.Ok("Deleted"));
+    }
+
+    private void SelectedNoteTypeChanged(string selectNoteType)
+    {
+        this.SelectedNoteType = selectNoteType;
+
+        this.PerformerNoteCopy.PerformerType = (PerformerType)Enum.Parse(typeof(PerformerType), selectNoteType);
+        this.PerformerNoteCopy.DuplicateType = (PerformerType)Enum.Parse(typeof(PerformerType), selectNoteType);
+    }
+}

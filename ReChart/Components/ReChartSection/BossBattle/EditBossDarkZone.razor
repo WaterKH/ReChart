@@ -1,0 +1,59 @@
+﻿@using MoMMusicAnalysis;
+@using ReChart.Interfaces;
+
+@inject IBossChartService BossChartService
+
+<div class="simple-form">
+    <div class="form-group" style="padding: 5px;">
+        <label for="dark-zone-time-value"><b>Start Note Time (in ms):</b></label>
+        <input @bind="@this.DarkZoneCopy.HitTime" type="text" class="form-control" id="dark-zone-time-value" style="width: 15%; text-align: right; display: inline;" />
+    </div>
+
+    <div class="form-group" style="padding: 5px;">
+        <label for="dark-zone-end-value"><b>End Note Time (in ms):</b></label>
+        <input @bind="@this.DarkZoneCopy.EndTime" type="text" class="form-control" id="dark-zone-end-value" style="width: 15%; text-align: right; display: inline;" />
+    </div>
+
+    <div class="form-group" style="padding: 5px;">
+        <label for="dark-zone-end-anim-value"><b>End Attack Animation Time (in ms):</b></label>
+        <input @bind="@this.DarkZoneCopy.EndAttackTime" type="text" class="form-control" id="dark-zone-end-anim-value" style="width: 15%; text-align: right; display: inline;" />
+    </div>
+
+    <br />
+    <button @onclick="SaveDarkZone" class="btn btn-primary">Save</button>
+    <button @onclick="DeleteDarkZone" class="btn btn-danger">Delete</button>
+    <button @onclick="@(async () => await this.ModalInstance.CancelAsync())" class="btn btn-secondary" style="float: right;">Cancel</button>
+</div>
+
+@code {
+
+    [CascadingParameter] BlazoredModalInstance ModalInstance { get; set; }
+
+    [Parameter] public int DarkZoneId { get; set; }
+    [Parameter] public Difficulty Difficulty { get; set; }
+
+
+    public BossDarkZone DarkZone;
+    private BossDarkZone DarkZoneCopy{ get; set; }
+
+
+    protected override void OnInitialized()
+    {
+        this.DarkZone = this.BossChartService.LoadBossDarkZone(this.Difficulty, this.DarkZoneId);
+        this.DarkZoneCopy = this.DarkZone.Copy();
+    }
+
+    void SaveDarkZone()
+    {
+        this.BossChartService.SaveBossDarkZone(ref this.DarkZone, this.DarkZoneCopy);
+
+        this.ModalInstance.CloseAsync(ModalResult.Ok<BossDarkZone>(this.DarkZone));
+    }
+
+    private async Task DeleteDarkZone()
+    {
+        this.BossChartService.RemoveBossDarkZone(this.Difficulty, this.DarkZoneId);
+
+        await this.ModalInstance.CloseAsync(ModalResult.Ok("Deleted"));
+    }
+}

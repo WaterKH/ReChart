@@ -1,0 +1,25 @@
+﻿@using MoMMusicAnalysis
+@using ReChart.ViewModels.ReChart
+
+<div id="@this.Lane.ToString()" class="rechart-lane" style="width: @(this.Length)px; height: 2pt; top: 15pt; float: left; position: relative;" @ondrop="InvokeOnDropNote" @ondragover="InvokeOnDragNote" @ondragover:preventDefault="true">
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public RenderFragment ChildContent { get; set; }
+    [Parameter] public FieldLane Lane { get; set; }
+    [Parameter] public int Length { get; set; }
+
+    [Parameter] public Action<DragEventArgs, FieldLane> OnDropNote { get; set; }
+    [Parameter] public Action<DragEventArgs, FieldLane> OnDragNote { get; set; }
+
+    private void InvokeOnDropNote(DragEventArgs e)
+    {
+        this.OnDropNote?.Invoke(e, Lane);
+    }
+
+    private void InvokeOnDragNote(DragEventArgs e)
+    {
+        this.OnDragNote?.Invoke(e, Lane);
+    }
+}

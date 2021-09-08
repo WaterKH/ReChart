@@ -1,0 +1,125 @@
+﻿@using ReChart.Logic;
+@using System.IO;
+@using System.Linq;
+
+@inject IJSRuntime JsRuntime
+
+<div class="simple-form">
+    <div class="form-group" style="padding-top: 5px;">
+        <label for="rootFolder"><b>Melody of Memory Root Folder:</b> @Settings.Configurations.MelodyOfMemoryRootFolder</label>
+        <br />
+        <label for="files" class="btn btn-primary" style="text-decoration-color: white;">Select Directory</label>
+        <input id="files" type="file" webkitdirectory style="visibility:hidden;" @onchange="((ChangeEventArgs e) => this.UpdateFolder(e))" />
+        <br />
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(Settings.Configurations.MelodyOfMemoryRootFolder))
+{
+    <hr />
+    <div class="simple-form">
+        <div class="accordion accordion-flush" id="accordionFlushSongs">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="flush-headingFieldBattleSongs">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseFieldBattleSongs" aria-expanded="false" aria-controls="flush-collapseFieldBattleSongs">
+                        <u>Field Battle Songs</u>
+                    </button>
+                </h2>
+                <div id="flush-collapseFieldBattleSongs" class="accordion-collapse collapse" aria-labelledby="flush-headingFieldBattleSongs" data-bs-parent="#accordionFlushSongs">
+                    <div class="row" style="height: 20vw; overflow-y: auto;">
+                        @foreach (var (fileEnding, songName) in Settings.Configurations.Songs.FieldBattle)
+                        {
+                            <div class="form-group col-6" style="padding-top: 5px;">
+                                <label for="music0000@(fileEnding)"><b>@songName:</b></label>
+                                <button @onclick="@(() => this.LoadSongFile("music0000" +  fileEnding))" id="music0000@(fileEnding)" class="btn btn-primary" style="float: right; display: inline;">music0000@(fileEnding)</button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="flush-headingMemoryDiveSongs">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseMemoryDiveSongs" aria-expanded="false" aria-controls="flush-collapseMemoryDiveSongs">
+                        <u>Memory Dive Songs</u>
+                    </button>
+                </h2>
+                <div id="flush-collapseMemoryDiveSongs" class="accordion-collapse collapse" aria-labelledby="flush-headingMemoryDiveSongs" data-bs-parent="#accordionFlushSongs">
+                    <div class="row" style="height: 20vw; overflow-y: auto;">
+                        @foreach (var (fileEnding, songName) in Settings.Configurations.Songs.MemoryDive)
+                        {
+                            <div class="form-group col-6" style="padding-top: 5px;">
+                                <label for="music0000@(fileEnding)"><b>@songName:</b></label>
+                                <button @onclick="@(() => this.LoadSongFile("music0000" +  fileEnding))" id="music0000@(fileEnding)" class="btn btn-primary" style="float: right; display: inline;">music0000@(fileEnding)</button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="flush-headingBossBattleSongs">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseBossBattleSongs" aria-expanded="false" aria-controls="flush-collapseBossBattleSongs">
+                        <u>Boss Battle Songs</u>
+                    </button>
+                </h2>
+                <div id="flush-collapseBossBattleSongs" class="accordion-collapse collapse" aria-labelledby="flush-headingBossBattleSongs" data-bs-parent="#accordionFlushSongs">
+                    <div class="row">
+                        @foreach (var (fileEnding, songName) in Settings.Configurations.Songs.BossBattle)
+                        {
+                            <div class="form-group col-6" style="padding-top: 5px;">
+                                <label for="music0000@(fileEnding)"><b>@songName:</b></label>
+                                <button @onclick="@(() => this.LoadSongFile("music0000" +  fileEnding))" id="music0000@(fileEnding)" class="btn btn-primary" style="float: right; display: inline;">music0000@(fileEnding)</button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="flush-headingCoOpSongs">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseCoOpSongs" aria-expanded="false" aria-controls="flush-collapseCoOpSongs">
+                        <u>Co-Op Songs</u>
+                    </button>
+                </h2>
+                <div id="flush-collapseCoOpSongs" class="accordion-collapse collapse" aria-labelledby="flush-headingCoOpSongs" data-bs-parent="#accordionFlushSongs">
+                    <div class="row" style="height: 20vw; overflow-y: auto;">
+                        @foreach (var (fileEnding, songName) in Settings.Configurations.Songs.CoOp)
+                        {
+                            <div class="form-group col-6" style="padding-top: 5px;">
+                                <label for="music0000@(fileEnding)"><b>@songName:</b></label>
+                                <button @onclick="@(() => this.LoadSongFile("music0000" +  fileEnding))" id="music0000@(fileEnding)" class="btn btn-primary" style="float: right; display: inline;">music0000@(fileEnding)</button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <br />
+            <button @onclick="@(async () => await this.ModalInstance.CancelAsync())" class="btn btn-secondary" style="float: right;">Cancel</button>
+        </div>
+    </div>
+}
+
+@code {
+    [CascadingParameter] BlazoredModalInstance ModalInstance { get; set; }
+
+    protected override void OnInitialized()
+    {
+    }
+
+    protected async Task LoadSongFile(string file)
+    {
+        if (!string.IsNullOrEmpty(Settings.Configurations.MelodyOfMemoryRootFolder))
+        {
+            var pathToSongs = Settings.Configurations.MelodyOfMemoryRootFolder + "\\KINGDOM HEARTS Melody of Memory_Data\\StreamingAssets\\AssetBundles\\regioncommon\\languagecommon\\music\\";
+
+            await this.ModalInstance.CloseAsync(ModalResult.Ok(Path.Combine(pathToSongs, file)));
+        }
+    }
+
+    private async Task UpdateFolder(ChangeEventArgs e)
+    {
+        var fullPath = await JsRuntime.InvokeAsync<string>("getFolderName", "files");
+
+        Settings.Configurations.MelodyOfMemoryRootFolder = string.Join('\\', fullPath.Split("\\").SkipLast(1));
+        Settings.SaveSettings();
+    }
+}

@@ -1,0 +1,38 @@
+{
+  "executable": "ReChart",
+  "name": "ReChart",
+  "author": "waterkh",
+  "splashscreen": {
+    "imageFile": "/wwwroot/images/ReChart/WaterKH.png"
+  },
+  "singleInstance": true,
+  "environment": "Production",
+  "build": {
+    "appId": "com.ReChart.app",
+    "productName": "ReChart",
+    "copyright": "Copyright © 2020",
+    "buildVersion": "0.1.0",
+    "compression": "maximum",
+    "win": {
+      "icon": "icon.ico"
+    },
+    "directories": {
+      "output": "."
+    },
+    "extraResources": [
+      {
+        "from": "./bin",
+        "to": "bin",
+        "filter": [ "**/*" ]
+      }
+    ],
+    "files": [
+      {
+        "from": "./ElectronHostHook/node_modules", 
+        "to": "ElectronHostHook/node_modules",
+        "filter": [ "**/*" ]
+      },
+      "**/*"
+    ]
+  }
+}

@@ -1,0 +1,110 @@
+﻿@using MoMMusicAnalysis;
+@using ReChart.ViewModels.ReChart;
+@using ReChart.Interfaces;
+
+@inject IFieldChartService FieldChartService
+
+<TabControl>
+    <TabPage Name="Asset">
+        <div class="simple-form">
+
+            <div class="form-group" style="padding: 5px;">
+                <label for="note-time-value"><b>Time (in ms):</b></label>
+                <input @bind="@this.FieldAsset.HitTime" type="text" class="form-control" id="note-time-value" style="width: 15%; text-align: right; display: inline;" />
+            </div>
+
+            <div class="form-group" style="padding: 5px;">
+                <label for="note-lane"><b>Lane:</b></label>
+                <select class="form-select" aria-label="note-lane" style="display: inline; width: 25%" @bind="this.FieldAsset.Lane">
+                    <option selected>Select Lane...</option>
+                    @foreach (FieldLane lane in Enum.GetValues(typeof(FieldLane)))
+                    {
+                        <option value="@lane">@lane.ToString()</option>
+                    }
+                </select>
+            </div>
+
+            <div class="form-group" style="padding: 5px;">
+                <label for="note-model-type"><b>Model:</b></label>
+                <button id="note-model-type" class="btn-sm rechart-button" style="background-image: url('@this.FieldAsset.Image');" disabled></button>
+            </div>
+        </div>
+    </TabPage>
+    <TabPage Name="Asset Anims">
+        <TabControl TabType="Pills">
+            @for (int i = 0; i < this.FieldAnimationsCopy.Count; ++i)
+            {
+                var local = i;
+                <TabPage Name="@($"Animation { local }")">
+                    <div class="simple-form">
+
+                        <div class="form-group" style="padding: 5px;">
+                            <label for="anim-starttime-value"><b>Animation Start Time (in ms):</b></label>
+                            <input type="text" class="form-control" id="anim-starttime-value" style="width: 15%; text-align: right; display: inline;" @bind-value="this.FieldAnimationsCopy[local].AnimationStartTime" />
+                        </div>
+
+                        <div class="form-group" style="padding: 5px;">
+                            <label for="anim-endtime-value"><b>Animation End Time (in ms):</b></label>
+                            <input type="text" class="form-control" id="anim-endtime-value" style="width: 15%; text-align: right; display: inline;" @bind-value="this.FieldAnimationsCopy[local].AnimationEndTime" />
+                        </div>
+
+                        <div class="form-group" style="padding: 5px;">
+                            <label for="anim-lane"><b>Lane:</b></label>
+                            <select class="form-select" aria-label="anim-lane" style="display: inline; width: 25%" @bind="this.FieldAnimationsCopy[local].Lane">
+                                <option selected>Select Lane...</option>
+                                @foreach (FieldLane lane in Enum.GetValues(typeof(FieldLane)))
+                                {
+                                    <option value="@lane">@lane.ToString()</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </TabPage>
+            }
+            <br />
+            <button @onclick="CreateFieldAnimation" class="btn btn-primary">Add Animation</button>
+            <br />
+        </TabControl>
+    </TabPage>
+</TabControl>
+
+@code {
+
+    [CascadingParameter] BlazoredModalInstance ModalInstance { get; set; }
+
+    //[Parameter] public Dictionary<string, string> AllAssetTypes { get; set; }
+    [Parameter] public Difficulty Difficulty { get; set; }
+    [Parameter] public int ParentNoteId { get; set; }
+    [Parameter] public string ParentSelectedNoteType { get; set; }
+
+    [Parameter] public EventCallback<string> ParentSelectedNoteTypeChanged { get; set; }
+
+    public FieldNoteDisplay FieldAsset;
+    public List<FieldAnimation> FieldAnimationsCopy { get; set; } = new List<FieldAnimation>();
+
+    // NOTE Don't allow Changing of AssetModelType - This is handled by the FieldNote
+    //string SelectedNoteType { get; set; }
+
+    protected override void OnInitialized()
+    {
+        this.FieldAsset = this.FieldChartService.GetClosestFieldAsset(this.Difficulty, this.ParentNoteId, this.ParentSelectedNoteType);
+
+        if (this.FieldAsset.NoteIndex != -1)
+        {
+            var anims = this.FieldChartService.LoadFieldAsset(this.Difficulty, this.FieldAsset.NoteIndex).Animations;
+
+            anims.ForEach(x => this.FieldAnimationsCopy.Add(x));
+        }
+        else
+        {
+            this.CreateFieldAnimation();
+        }
+
+        base.OnInitialized();
+    }
+
+    protected void CreateFieldAnimation()
+    {
+        this.FieldAnimationsCopy.Add(new FieldAnimation { AnimationEndTime = this.FieldAsset.HitTime, AnimationStartTime = this.FieldAsset.HitTime - 3000, Lane = this.FieldAsset.Lane });
+    }
+}

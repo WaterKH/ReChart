@@ -1,0 +1,535 @@
+﻿@using MoMMusicAnalysis;
+@using ReChart.Logic;
+@using ReChart.Services;
+@using ReChart.Interfaces;
+@using ReChart.ViewModels.ReChart;
+@using ReChart.Enums;
+
+@inject IFieldChartService FieldChartService
+
+<div id="@this.Id">
+    <div id="@(this.Id)-content">
+        <div class="card" style="border-top-right-radius: 0rem; border-top-left-radius: 0rem;">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col-md-4">
+                        <label for="song-length">Song Length:</label>
+                        <input class="form-control" type="text" id="song-length-value" style="width: 25%; text-align: right; display: inline;" @bind-value="@this.length" />
+                    </div>
+                    <div class="col-md-4" style="display: flex; justify-content: center; align-items: center;">
+                        <b><u style="font-size: 20px;">@this.SongTitle</u></b>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="button" class="btn btn-primary" style="float: right;" @onclick="ShowFieldOptions">Options</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                @* Max Height for now is 535px *@
+                <div style="overflow-x: auto; overflow-y: hidden; border-top-right-radius: 0.25rem; border-top-left-radius: 0.25rem; max-height: 535px;" tabindex="0" @ref="ChartReference" @onkeydown="KeyboardEventListener">
+                    @foreach (FieldLane lane in Enum.GetValues(typeof(FieldLane)))
+                    {
+                        <div style="width: @(length + 500)px; height: 30pt; background-color: @(lane.ToString().Contains("Player") ? "#FFB6B3" : lane.ToString().Contains("Member1") ? "#9CECFF" : lane.ToString().Contains("Member2") ? "#BDE7DB" : "#CCB7E5")"
+                             @onmousemove="@(e => this.MouseOverChart(e, lane))" @onclick="PlaceNote" @onmouseout="MouseOutChart" @ondrop="@((DragEventArgs e) => OnDropNote(e, lane))" @ondragover="@((DragEventArgs e) => OnDragNote(e, lane))" @ondragover:preventDefault="true">
+                            <FieldChartLane Length="@(this.length + 500)" Lane="@lane" OnDropNote="@OnDropNote" OnDragNote="@OnDragNote">
+                                <div id="Notes">
+                                    @foreach (var note in this.DisplayNotes["FieldNote"].Where(x => x.Lane == lane))
+                                    {
+                                        <FieldChartNote Type="FieldNote" DisplayNote="@note" ParentMethod="@ShowEditNote" OnDragNoteStart="@OnDragNoteStart" />
+                                    }
+                                </div>
+                                @*<div id="Assets">
+                                        @foreach (var asset in this.DisplayNotes["FieldAsset"].Where(x => x.Lane == lane))
+                                        {
+                                            if (asset.Image != "Projectile")
+                                            {
+                                            <FieldChartNote Type="FieldAsset" DisplayNote="@asset" ParentMethod="@ShowEditNote" />
+                                            }
+                                        }
+                                    </div>*@
+                                <div id="Performers">
+                                    @foreach (var performer in this.DisplayNotes["PerformerNote"].Where(x => x.Lane == lane))
+                                    {
+                                        <FieldChartNote Type="PerformerNote" DisplayNote="@performer" ParentMethod="@ShowEditNote" OnDragNoteStart="@OnDragNoteStart" />
+                                    }
+                                </div>
+                                <div id="Tempos">
+                                    @foreach (var tempo in this.DisplayNotes["Tempo"].Where(x => x.Lane == lane))
+                                    {
+                                        <FieldChartNote Type="Tempo" DisplayNote="@tempo" ParentMethod="@ShowEditNote" OnDragNoteStart="@OnDragNoteStart" />
+                                    }
+                                </div>
+
+                                @if (this.PlaceholderDisplayNote != null && this.PlaceholderDisplayNote.Lane == lane)
+                                {
+                                    <button id="placeholder-display-note" class="btn-sm rechart-button" title="@this.PlaceholderDisplayNote.HitTime.ToString()"
+                                            style="left: @(this.PlaceholderDisplayNote.HitTime)px; position: absolute; background-image: url('@this.PlaceholderDisplayNote.Image'); opacity: 0.4;" />
+
+                                    <div style="left: @(this.PlaceholderDisplayNote.HitTime)px; top: @(this.PlaceholderDisplayNote.Lane == FieldLane.OutOfMapLeft ? "30px" : "-50px"); position: absolute; background-color: #C6C9CE; border-radius: 0.25rem; z-index: 5;">
+                                        <label><b>@this.PlaceholderDisplayNote.HitTime</b></label>
+                                    </div>
+                                }
+                                else if (this.DragNote != null && this.DropLane == lane)
+                                {
+                                    <div style="left: @(this.DropTime)px; top: @(this.DropLane == FieldLane.OutOfMapLeft ? "30px" : "-50px"); position: absolute; background-color: #C6C9CE; border-radius: 0.25rem; z-index: 5;">
+                                        <label><b>@this.DropTime</b></label>
+                                    </div>
+                                }
+                            </FieldChartLane>
+                        </div>
+                    }
+
+                    @foreach (var beat in this.BeatService.CurrentBeats)
+                    {
+                        if (beat != null)
+                        {
+                            <div style="display: inline-block; position: relative; float: left; background-color: @(beat.Color == System.Drawing.Color.MediumPurple ? "mediumpurple" : "purple"); width: 2pt; height: 100vh; left: @(beat.Location.X)px; top: -100vh;"></div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="@(this.Id)-notes">
+        <div class="row">
+            <div class="col-md-12">
+                <div id="notes" class="card" style="margin-top: 5px;">
+                    <div class="card-header">
+                        Select Note to Place
+                    </div>
+                    <div class="card-body">
+                        <NoteChoices Title="Field Notes" Type="FieldNote" ImageTypes="@this.AllNoteTypes" @bind-ActiveNote="this.SelectedNoteType" SelectedNoteTypeChanged="this.SelectedNoteTypeChanged" />
+                        <br />
+                        <NoteChoices Title="Performer Notes" Type="PerformerNote" ImageTypes="@this.AllPerformerTypes" @bind-ActiveNote="this.SelectedNoteType" SelectedNoteTypeChanged="this.SelectedNoteTypeChanged" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8">
+                <div id="quick-place" class="card" style="margin-top: 5px;">
+                    <div class="card-header">
+                        Quick Place
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label for="quick-place-time">Time:</label>
+                                <input class="form-control" type="text" id="quick-place-time" style="width: 50%; text-align: right; display: inline;" @bind-value="@this.QuickPlaceTime" />
+                            </div>
+                            <div class="col-md-7">
+                                <label for="quick-place-lane">Lane:</label>
+                                <select class="form-select" aria-label="quick-place-lane" style="display: inline; width: 60%" @bind="@this.QuickPlaceLane">
+                                    <option selected>Select Lane...</option>
+                                    @foreach (FieldLane lane in Enum.GetValues(typeof(FieldLane)))
+                                    {
+                                        <option value="@lane">@lane.ToString()</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-1">
+                                <button type="button" class="btn btn-primary" style="float: right;" @onclick="(() => QuickPlace(this.QuickPlaceTime, this.QuickPlaceLane, this.SelectedNoteType))">Place</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<br />
+
+@code {
+    [CascadingParameter] public IModalService Modal { get; set; }
+
+    [Parameter] public string Id { get; set; }
+    [Parameter] public string SongTitle { get; set; }
+    [Parameter] public Difficulty Difficulty { get; set; }
+    [Parameter] public Dictionary<string, List<FieldNoteDisplay>> DisplayNotes { get; set; }
+
+    public string SelectedNoteType { get; set; }
+
+    public Dictionary<string, string> AllNoteTypes { get; set; }
+    //public Dictionary<string, string> AllAssetTypes { get; set; }
+    public Dictionary<string, string> AllPerformerTypes { get; set; }
+
+    public int QuickPlaceTime { get; set; }
+    public FieldLane QuickPlaceLane { get; set; }
+
+    private int length { get; set; }
+
+    private FieldNoteDisplay PlaceholderDisplayNote { get; set; }
+    private FieldNoteDisplay DragNote { get; set; }
+    private int DropTime { get; set; }
+    private FieldLane DropLane { get; set; }
+
+    private BeatService<FieldLane> BeatService { get; set; }
+    private ElementReference ChartReference { get; set; }
+    private Line ClosestTime { get; set; }
+
+    private Dictionary<string, bool> ChartDisplays { get; set; }
+    private string currentBeat { get; set; } = "3";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        this.BeatService = new BeatService<FieldLane>();
+        this.BeatService.UpdateCurrentBeats("3");
+        this.BeatService.CalculateOffset(this.FieldChartService.GetFieldNotes(this.Difficulty), this.FieldChartService.GetFieldAssets(this.Difficulty));
+
+        this.length = this.DisplayNotes.Count > 0 ? this.DisplayNotes["FieldNote"][^1].HitTime : 5000;
+
+        this.AllNoteTypes = new Dictionary<string, string>
+{
+            { "CommonEnemy", Utilities.GetImage(FieldModelType.CommonEnemy, 0, 0) },
+            { "AerialCommonEnemy", Utilities.GetImage(FieldModelType.AerialCommonEnemy, 0, 0) },
+            { "UncommonEnemy", Utilities.GetImage(FieldModelType.UncommonEnemy, 0, 0) },
+            { "AerialUncommonEnemy", Utilities.GetImage(FieldModelType.AerialUncommonEnemy, 0, 0) },
+            { "MultiHitGroundEnemy", Utilities.GetImage(FieldModelType.MultiHitGroundEnemy, 0, 0) },
+            { "MultiHitAerialEnemy", Utilities.GetImage(FieldModelType.MultiHitAerialEnemy, 0, 0) },
+            { "EnemyShooterProjectile", Utilities.GetImage(FieldModelType.EnemyShooterProjectile, 2, 0) },
+            { "EnemyShooter", Utilities.GetImage(FieldModelType.EnemyShooter, 0, 0) },
+            { "AerialEnemyShooterProjectile", Utilities.GetImage(FieldModelType.AerialEnemyShooterProjectile, 2, 0) },
+            { "AerialEnemyShooter", Utilities.GetImage(FieldModelType.AerialEnemyShooter, 0, 0) },
+            { "JumpingGroundEnemy", Utilities.GetImage(FieldModelType.JumpingGroundEnemy, 0, 0) },
+            { "JumpingAerialEnemy", Utilities.GetImage(FieldModelType.JumpingAerialEnemy, 0, 0) },
+            { "HiddenEnemy", Utilities.GetImage(FieldModelType.HiddenEnemy, 0, 0) },
+            { "HittableAerialUncommonEnemy", Utilities.GetImage(FieldModelType.HittableAerialUncommonEnemy, 0, 0) },
+            { "CrystalEnemyLeftRight", Utilities.GetImage(FieldModelType.CrystalEnemyLeftRight, 1, 0) },
+            { "CrystalEnemyCenter", Utilities.GetImage(FieldModelType.CrystalEnemyCenter, 1, 0) },
+            { "GlideNote", Utilities.GetImage(FieldModelType.GlideNote, 3, 0) },
+            { "Barrel", Utilities.GetImage(FieldModelType.Barrel, 4, 0) },
+            { "Crate", Utilities.GetImage(FieldModelType.Crate, 4, 1) },
+            { "CrystalTeamHeal", Utilities.GetImage(FieldModelType.CrystalTeamHeal, 1, 0) }
+        };
+
+        //this.AllAssetTypes = new Dictionary<string, string>
+        //{
+        //    { "AerialCommonArrow", Utilities.GetImage(FieldAssetType.AerialCommonArrow) },
+        //    { "ShooterProjectileArrow", Utilities.GetImage(FieldAssetType.ShooterProjectileArrow) },
+        //    { "GlideArrow", Utilities.GetImage(FieldAssetType.GlideArrow) },
+        //    { "CrystalRightLeft", Utilities.GetImage(FieldAssetType.CrystalRightLeft) },
+        //    { "CrystalCenter", Utilities.GetImage(FieldAssetType.CrystalCenter) }
+        //};
+
+        this.ChartDisplays = new Dictionary<string, bool>
+    {
+            { "Notes", true },
+            { "Assets", true },
+            { "Performers", true },
+            { "Tempos", true }
+        };
+
+        this.AllPerformerTypes = Enum.GetNames<PerformerType>().ToDictionary(x => x, y => $"/images/ReChart/PerformerNotes/{y}.png");
+    }
+
+    protected void OnDragNoteStart(FieldNoteDisplay fieldNoteDisplay)
+    {
+        this.DragNote = fieldNoteDisplay;
+        this.DropLane = fieldNoteDisplay.Lane;
+    }
+
+    protected void OnDragNote(DragEventArgs dragEventArgs, FieldLane lane)
+    {
+        this.DropTime = (int)dragEventArgs.OffsetX;
+        this.DropLane = lane;
+    }
+
+    protected void OnDropNote(DragEventArgs dragEventArgs, FieldLane lane)
+    {
+        if (this.DragNote == null)
+            return;
+
+        this.DragNote.HitTime = (int)dragEventArgs.OffsetX;
+
+        if (this.DragNote.Image.Split('/')[^2].Contains("Field"))
+        {
+            var time = (int)dragEventArgs.OffsetX;
+            var fieldNote = this.FieldChartService.LoadFieldNote(this.Difficulty, this.DragNote.NoteIndex);
+            this.DragNote.Lane = lane;
+
+            this.FieldChartService.RemoveFieldNote(this.Difficulty, this.DragNote.NoteIndex);
+            this.FieldChartService.AddFieldNote(this.Difficulty, time, lane, Utilities.GetEnumName(fieldNote.ModelType, fieldNote.NoteType, fieldNote.Unk3),
+                new List<FieldAnimation> { new FieldAnimation { AnimationEndTime = time, AnimationStartTime = time - 3000 > 0 ? time - 3000 : 0, Lane = lane } });
+
+            this.DisplayNotes["FieldNote"][this.DragNote.NoteIndex] = this.DragNote;
+        }
+        else if (this.DragNote.Image.Split('/')[^2].Contains("Performer"))
+        {
+            var performerNote = this.FieldChartService.LoadFieldPerformerNote(this.Difficulty, this.DragNote.NoteIndex);
+            this.DragNote.Lane = lane;
+
+            this.FieldChartService.RemovePerformerNote(this.Difficulty, this.DragNote.NoteIndex);
+            this.FieldChartService.AddPerformerNote(this.Difficulty, (int)dragEventArgs.OffsetX, lane, performerNote.PerformerType);
+
+            this.DisplayNotes["PerformerNote"][this.DragNote.NoteIndex] = this.DragNote;
+        }
+        else if (this.DragNote.Image.Split('/')[^2].Contains("Tempo"))
+        {
+            var tempo = this.FieldChartService.LoadFieldTempo(this.Difficulty, this.DragNote.NoteIndex);
+
+            this.FieldChartService.RemoveFieldTempo(this.Difficulty, this.DragNote.NoteIndex);
+            this.FieldChartService.AddFieldTempo(this.Difficulty, (int)dragEventArgs.OffsetX, tempo.Speed);
+
+            this.DisplayNotes["Tempo"][this.DragNote.NoteIndex] = this.DragNote;
+        }
+
+        this.DragNote = null;
+    }
+
+    protected async Task ShowEditNote(string noteType, int noteId)
+    {
+        IModalReference editModal;
+        var parameters = new ModalParameters();
+        var options = new ModalOptions()
+        {
+            Animation = ModalAnimation.FadeInOut(0.2)
+        };
+
+        if (noteType == "FieldNote")
+        {
+            parameters.Add("FieldNoteId", noteId);
+            parameters.Add("AllNoteTypes", this.AllNoteTypes);
+            parameters.Add("Difficulty", this.Difficulty);
+
+            editModal = Modal.Show<EditFieldNote>($"Edit Field Note { noteId }", parameters, options);
+            var result = await editModal.Result;
+
+            if (!result.Cancelled)
+            {
+                if (result.Data.GetType() == typeof(FieldNote))
+                {
+                    var fieldNote = (FieldNote)result.Data;
+
+                    this.DisplayNotes["FieldNote"].FirstOrDefault(x => x.NoteIndex == noteId).HitTime = fieldNote.HitTime;
+                    this.DisplayNotes["FieldNote"].FirstOrDefault(x => x.NoteIndex == noteId).Image = Utilities.GetImage(fieldNote.ModelType, fieldNote.NoteType, fieldNote.Unk3);
+                    this.DisplayNotes["FieldNote"].FirstOrDefault(x => x.NoteIndex == noteId).Lane = fieldNote.Lane;
+                }
+                else if (result.Data.GetType() == typeof(string))
+                {
+                    if (result.Data.ToString() == "Deleted")
+                    {
+                        this.DisplayNotes["FieldNote"].RemoveAt(noteId);
+
+                        // Redo Note Indexes
+                        var index = 0;
+                        this.DisplayNotes["FieldNote"].OrderBy(x => x.HitTime).ToList().ForEach(x => x.NoteIndex = index++);
+                    }
+                }
+            }
+        }
+        //else if (noteType == "FieldAsset")
+        //{
+        //    parameters.Add("FieldAssetId", noteId);
+        //    //parameters.Add("AllAssetTypes", this.AllAssetTypes);
+        //    parameters.Add("Difficulty", this.Difficulty);
+
+        //    editModal = Modal.Show<EditFieldAsset>($"Edit Field Asset { noteId }", parameters, options);
+        //    var result = await editModal.Result;
+
+        //    if (!result.Cancelled)
+        //    {
+        //        var fieldAsset = (FieldAsset)result.Data;
+
+        //        this.DisplayNotes["FieldAsset"].FirstOrDefault(x => x.NoteIndex == noteId).HitTime = fieldAsset.HitTime;
+        //        this.DisplayNotes["FieldAsset"].FirstOrDefault(x => x.NoteIndex == noteId).Image = Utilities.GetImage(fieldAsset.ModelType);
+        //        this.DisplayNotes["FieldAsset"].FirstOrDefault(x => x.NoteIndex == noteId).Lane = fieldAsset.Lane;
+        //    }
+        //}
+        else if (noteType == "PerformerNote")
+        {
+            parameters.Add("PerformerNoteId", noteId);
+            parameters.Add("AllPerformerTypes", this.AllPerformerTypes);
+            parameters.Add("Difficulty", this.Difficulty);
+
+            editModal = Modal.Show<EditFieldPerformerNote>($"Edit Performer Note { noteId }", parameters, options);
+            var result = await editModal.Result;
+
+            if (!result.Cancelled)
+            {
+                if (result.Data.GetType() == typeof(PerformerNote<FieldLane>))
+                {
+                    var performerNote = (PerformerNote<FieldLane>)result.Data;
+
+                    this.DisplayNotes["PerformerNote"].FirstOrDefault(x => x.NoteIndex == noteId).HitTime = performerNote.HitTime;
+                    this.DisplayNotes["PerformerNote"].FirstOrDefault(x => x.NoteIndex == noteId).Image = Utilities.GetImage(performerNote.PerformerType);
+                    this.DisplayNotes["PerformerNote"].FirstOrDefault(x => x.NoteIndex == noteId).Lane = performerNote.Lane;
+                }
+                else if (result.Data.GetType() == typeof(string))
+                {
+                    if (result.Data.ToString() == "Deleted")
+                    {
+                        this.DisplayNotes["PerformerNote"].RemoveAt(noteId);
+
+                        // Redo Note Indexes
+                        var index = 0;
+                        this.DisplayNotes["PerformerNote"].OrderBy(x => x.HitTime).ToList().ForEach(x => x.NoteIndex = index++);
+                    }
+                }
+            }
+        }
+        else if (noteType == "Tempo")
+        {
+            parameters.Add("TempoId", noteId);
+            parameters.Add("Difficulty", this.Difficulty);
+
+            editModal = Modal.Show<EditFieldTempo>($"Edit Tempo { noteId }", parameters, options);
+            var result = await editModal.Result;
+
+            if (!result.Cancelled)
+            {
+                if (result.Data.GetType() == typeof(TimeShift<FieldLane>))
+                {
+                    var tempo = (TimeShift<FieldLane>)result.Data;
+
+                    this.DisplayNotes["Tempo"].FirstOrDefault(x => x.NoteIndex == noteId).HitTime = tempo.HitTime;
+                }
+                else if (result.Data.GetType() == typeof(string))
+                {
+                    if (result.Data.ToString() == "Deleted")
+                    {
+                        this.DisplayNotes["Tempo"].RemoveAt(noteId);
+
+                        // Redo Note Indexes
+                        var index = 0;
+                        this.DisplayNotes["Tempo"].OrderBy(x => x.HitTime).ToList().ForEach(x => x.NoteIndex = index++);
+                    }
+                }
+            }
+        }
+
+        StateHasChanged();
+    }
+
+    protected async Task ShowFieldOptions()
+    {
+        IModalReference editModal;
+        var parameters = new ModalParameters();
+        var options = new ModalOptions()
+        {
+            Animation = ModalAnimation.FadeInOut(0.2)
+        };
+
+        parameters.Add("Chart", Settings.Configurations.KeyConfigs.FieldBattle);
+
+        editModal = Modal.Show<EditOptions>($"Edit Field Options", parameters, options);
+        var result = await editModal.Result;
+
+        if (result.Cancelled)
+            Settings.LoadSettings();
+    }
+
+    protected void SelectedNoteTypeChanged(string type)
+    {
+        this.SelectedNoteType = type;
+        this.ChartReference.FocusAsync();
+
+        if (string.IsNullOrEmpty(this.SelectedNoteType))
+        {
+            this.PlaceholderDisplayNote = null;
+        }
+        else if (this.PlaceholderDisplayNote != null)
+        {
+            if (this.AllNoteTypes.ContainsKey(type))
+                this.PlaceholderDisplayNote.Image = this.AllNoteTypes[type];
+            else if (this.AllPerformerTypes.ContainsKey(type))
+                this.PlaceholderDisplayNote.Image = this.AllPerformerTypes[type];
+        }
+    }
+
+    protected void QuickPlace(int time, FieldLane lane, string modelType)
+    {
+        if (Enum.TryParse<FieldModelType>(modelType, out var fieldModelType))
+        {
+            // Add to song notes
+            this.FieldChartService.AddFieldNote(this.Difficulty, time, lane, modelType, new List<FieldAnimation> { new FieldAnimation { AnimationEndTime = time, AnimationStartTime = time - 3000 > 0 ? time - 3000 : 0, Lane = lane } });
+            var fieldNote = this.FieldChartService.LoadFieldNote(this.Difficulty, this.DisplayNotes["FieldNote"].Count);
+
+            // Add to display notes
+            this.DisplayNotes["FieldNote"].Add(new FieldNoteDisplay { HitTime = time, Lane = lane, NoteIndex = this.DisplayNotes["FieldNote"].Count, Image = Utilities.GetImage(fieldModelType, fieldNote.NoteType, fieldNote.Unk3) });
+        }
+        else if (Enum.TryParse<PerformerType>(modelType, out var performerType))
+        {
+            // Add to song notes
+            this.FieldChartService.AddPerformerNote(this.Difficulty, time, lane, performerType);
+
+            // Add to display notes
+            this.DisplayNotes["PerformerNote"].Add(new FieldNoteDisplay { HitTime = time, Lane = lane, NoteIndex = this.DisplayNotes["PerformerNote"].Count, Image = Utilities.GetImage(performerType) });
+        }
+    }
+
+    protected void MouseOverChart(MouseEventArgs mouseEventArgs, FieldLane lane)
+    {
+        if (string.IsNullOrEmpty(this.SelectedNoteType))
+            return;
+
+        if (this.PlaceholderDisplayNote == null)
+        {
+            this.PlaceholderDisplayNote = new FieldNoteDisplay();
+
+            if (this.AllNoteTypes.ContainsKey(this.SelectedNoteType))
+                this.PlaceholderDisplayNote.Image = this.AllNoteTypes[this.SelectedNoteType];
+            else if (this.AllPerformerTypes.ContainsKey(this.SelectedNoteType))
+                this.PlaceholderDisplayNote.Image = this.AllPerformerTypes[this.SelectedNoteType];
+        }
+
+        this.PlaceholderDisplayNote.HitTime = ((int)mouseEventArgs.OffsetX) - 35;
+        this.PlaceholderDisplayNote.Lane = lane;
+
+        this.BeatService.DisplayChartBeats(this.FieldChartService.GetTempos(this.Difficulty), this.PlaceholderDisplayNote.HitTime);
+
+        this.ClosestTime = Settings.CurrentBeat != Beat.None ? this.BeatService.SnapToBeat(this.PlaceholderDisplayNote.HitTime) : null;
+
+        if (this.currentBeat != Settings.Configurations.KeyConfigs.Beats["Whole"] && this.BeatService.CurrentBeats.Count == 0)
+            this.BeatService.UpdateCurrentBeats(this.currentBeat);
+    }
+
+    protected void MouseOutChart(MouseEventArgs mouseEventArgs)
+    {
+        this.PlaceholderDisplayNote = null;
+
+        this.BeatService.RemoveChartBeats();
+    }
+
+    protected void PlaceNote()
+    {
+        if (this.PlaceholderDisplayNote == null)
+            return;
+
+        if (this.ClosestTime != null)
+            this.QuickPlace(this.ClosestTime.Location.X, this.PlaceholderDisplayNote.Lane, this.SelectedNoteType);
+        else
+            this.QuickPlace(this.PlaceholderDisplayNote.HitTime, this.PlaceholderDisplayNote.Lane, this.SelectedNoteType);
+    }
+
+    protected void KeyboardEventListener(KeyboardEventArgs keyboardEventArgs)
+    {
+        foreach (var noteConfig in Settings.Configurations.KeyConfigs.FieldBattle.Notes)
+        {
+            if (keyboardEventArgs.Key == noteConfig.Value)
+            {
+                this.SelectedNoteTypeChanged(noteConfig.Key);
+
+                return;
+            }
+        }
+
+        foreach (var displayConfig in Settings.Configurations.KeyConfigs.FieldBattle.Displays)
+        {
+            if (keyboardEventArgs.CtrlKey && keyboardEventArgs.Key == displayConfig.Value)
+            {
+                this.ChartDisplays[displayConfig.Key] = !this.ChartDisplays[displayConfig.Key];
+
+                return;
+            }
+        }
+
+        this.BeatService.UpdateCurrentBeats(keyboardEventArgs.Key);
+
+        this.currentBeat = keyboardEventArgs.Key;
+    }
+}

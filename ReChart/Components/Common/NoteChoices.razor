@@ -1,0 +1,35 @@
+﻿<div class="card">
+    @if (!string.IsNullOrEmpty(this.Title))
+    {
+        <div class="card-header">
+            @this.Title
+        </div>
+    }
+    <div class="card-body" style="@(!string.IsNullOrEmpty(this.Title) ? "" : "border-top-right-radius: 0.25rem; border-top-left-radius: 0.25rem;") background-color: #C6C9CE;">
+        <div class="row">
+            @foreach (var (type, image) in this.ImageTypes)
+            {
+                <div id="@($"{type}-Description")" class="col-md-1">
+                    <button class="btn-sm rechart-button @(this.ActiveNote == type ? "rechart-button-overlay" : "")" @onclick="@(() => SwitchActiveNote(type))" name="@(this.Type)-outlined" 
+                            id="@(type)-outlined" title="@type" style="background-image: url('@image'); position: inherit; background-repeat: no-repeat;" />
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; }
+    [Parameter] public string Type { get; set; }
+    [Parameter] public Dictionary<string, string> ImageTypes { get; set; } = new Dictionary<string, string>();
+    [Parameter] public string ActiveNote { get; set; }
+    [Parameter] public EventCallback<string> ActiveNoteChanged { get; set; }
+    [Parameter] public EventCallback<string> SelectedNoteTypeChanged { get; set; }
+
+    protected Task SwitchActiveNote(string note)
+    {
+        this.ActiveNote = note;
+
+        return this.SelectedNoteTypeChanged.InvokeAsync(this.ActiveNote);
+    }
+}

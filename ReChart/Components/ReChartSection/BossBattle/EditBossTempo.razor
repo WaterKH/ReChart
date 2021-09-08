@@ -1,0 +1,54 @@
+﻿@using MoMMusicAnalysis;
+@using ReChart.Interfaces;
+
+@inject IBossChartService BossChartService
+
+<div class="simple-form">
+    <div class="form-group" style="padding: 5px;">
+        <label for="note-time-value"><b>Time (in ms):</b></label>
+        <input @bind="@this.TempoCopy.HitTime" type="text" class="form-control" id="note-time-value" style="width: 15%; text-align: right; display: inline;" />
+    </div>
+
+    <div class="form-group" style="padding: 5px;">
+        <label for="tempo-value"><b>Tempo (in ms/ Quarter Notes):</b></label>
+        <input @bind="@this.TempoCopy.Speed" type="text" class="form-control" id="tempo-value" style="width: 15%; text-align: right; display: inline;" />
+    </div>
+
+    <br />
+    <button @onclick="SaveTempo" class="btn btn-primary">Save</button>
+    <button @onclick="DeleteTempo" class="btn btn-danger">Delete</button>
+    <button @onclick="@(async () => await this.ModalInstance.CancelAsync())" class="btn btn-secondary" style="float: right;">Cancel</button>
+</div>
+
+@code {
+
+    [CascadingParameter] BlazoredModalInstance ModalInstance { get; set; }
+
+    [Parameter] public int TempoId { get; set; }
+    [Parameter] public Difficulty Difficulty { get; set; }
+
+
+    public TimeShift<BossLane> Tempo;
+    private TimeShift<BossLane> TempoCopy{ get; set; }
+
+
+    protected override void OnInitialized()
+    {
+        this.Tempo = this.BossChartService.LoadBossTempo(this.Difficulty, this.TempoId);
+        this.TempoCopy = this.Tempo.Copy();
+    }
+
+    void SaveTempo()
+    {
+        this.BossChartService.SaveBossTempo(ref this.Tempo, this.TempoCopy);
+
+        this.ModalInstance.CloseAsync(ModalResult.Ok<TimeShift<BossLane>>(this.Tempo));
+    }
+
+    private async Task DeleteTempo()
+    {
+        this.BossChartService.RemoveBossTempo(this.Difficulty, this.TempoId);
+
+        await this.ModalInstance.CloseAsync(ModalResult.Ok("Deleted"));
+    }
+}

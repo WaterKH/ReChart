@@ -1,0 +1,320 @@
+﻿@using MoMMusicAnalysis;
+@using ReChart.Logic;
+@using ReChart.Interfaces;
+
+@inject IFieldChartService FieldChartService
+
+<TabControl>
+    <TabPage Name="Field Note">
+        <div class="simple-form">
+
+            <div class="form-group" style="padding: 5px;">
+                <label for="note-time-value"><b>Time (in ms):</b></label>
+                <input type="text" class="form-control" id="note-time-value" style="width: 15%; text-align: right; display: inline;" @bind-value="@this.FieldNoteCopy.HitTime" />
+            </div>
+
+            <div class="form-group" style="padding: 5px;">
+                <label for="note-lane"><b>Lane:</b></label>
+                <select class="form-select" aria-label="note-lane" style="display: inline; width: 25%" @bind="this.FieldNoteCopy.Lane">
+                    <option selected>Select Lane...</option>
+                    @foreach (FieldLane lane in Enum.GetValues(typeof(FieldLane)))
+                    {
+                        <option value="@lane">@lane.ToString()</option>
+                    }
+                </select>
+            </div>
+
+            <div class="form-group" style="padding: 5px;">
+                <label for="note-model-value"><b>Model:</b></label>
+                <NoteChoices Type="FieldNote" ImageTypes="@this.AllNoteTypes" @bind-ActiveNote="this.SelectedNoteType" SelectedNoteTypeChanged="SelectedNoteTypeChanged" />
+            </div>
+
+            @if (this.SelectedNoteType.Contains("Multi") || this.SelectedNoteType.Contains("Glide"))
+            {
+                <div class="form-group" style="padding: 5px;">
+                    <label for="note-previous"><b>Previous Note:</b></label>
+                    <select class="form-select" aria-label="note-previous" style="display: inline; width: auto" @bind="this.FieldNoteCopy.PreviousEnemyNoteIndex">
+                        <option value="@(-1)" selected>---</option>
+                        @foreach (var note in this.PreviousNotes)
+                        {
+                            <option value="@(this.FieldChartService.GetNoteIndex(this.Difficulty, note))">Field Note ~ HitTime: @note.HitTime.ToString() - Lane: @note.Lane.ToString()</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="form-group" style="padding: 5px;">
+                    <label for="note-next"><b>Next Note:</b></label>
+                    <select class="form-select" aria-label="note-next" style="display: inline; width: auto" @bind="this.FieldNoteCopy.NextEnemyNoteIndex">
+                        <option value="@(-1)" selected>---</option>
+                        @foreach (var note in this.NextNotes)
+                        {
+                            <option value="@(this.FieldChartService.GetNoteIndex(this.Difficulty, note))">Field Note ~ HitTime: @note.HitTime.ToString() - Lane: @note.Lane.ToString()</option>
+                        }
+                    </select>
+                </div>
+            }
+            else if (this.SelectedNoteType.Contains("Projectile"))
+            {
+                <div class="form-group" style="padding: 5px;">
+                    <label for="note-shooter"><b>Projectile Origin Note:</b></label>
+                    <select class="form-select" aria-label="note-shooter" style="display: inline; width: auto" @bind="this.FieldNoteCopy.ProjectileOriginNoteIndex">
+                        <option value="@(-1)" selected>---</option>
+                        @foreach (var note in this.ShooterNotes)
+                        {
+                            <option value="@(this.FieldChartService.GetNoteIndex(this.Difficulty, note))">Field Note ~ HitTime: @note.HitTime.ToString() - Lane: @note.Lane.ToString()</option>
+                        }
+                    </select>
+                </div>
+            }
+
+            @if (this.SelectedNoteType.Contains("Projectile") || (this.SelectedNoteType.Contains("Glide") && this.FieldNoteCopy.PreviousEnemyNoteIndex == -1) || ((this.SelectedNoteType.Contains("Aerial") && !this.SelectedNoteType.Contains("Hittable"))) || this.SelectedNoteType.Contains("Crystal"))
+            {
+                <EditFieldAsset @ref="EditFieldAsset" Difficulty="@this.Difficulty" @bind-ParentSelectedNoteType="@this.SelectedNoteType" ParentNoteId="@this.FieldNoteId" />
+            }
+
+            <br />
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="note-star" @bind="this.FieldNoteCopy.StarFlag">
+                <label class="form-check-label" for="note-star"><b>Is Star Note?</b></label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="note-party" @bind="this.FieldNoteCopy.PartyFlag">
+                <label class="form-check-label" for="note-party"><b>Is Party Orb?</b></label>
+            </div>
+
+            <br />
+            <br />
+            <button @onclick="SaveFieldNote" class="btn btn-primary">Save</button>
+            <button @onclick="DeleteFieldNote" class="btn btn-danger">Delete</button>
+            <button @onclick="@(async () => await this.ModalInstance.CancelAsync())" class="btn btn-secondary" style="float: right;">Cancel</button>
+        </div>
+    </TabPage>
+    <TabPage Name="Field Note Anims">
+        <TabControl TabType="Pills">
+            @for (int i = 0; i < this.FieldAnimationsCopy.Count; ++i)
+            {
+                var local = i;
+                <TabPage Name="@($"Animation { local }")">
+                    <div class="simple-form">
+
+                        <div class="form-group" style="padding: 5px;">
+                            <label for="anim-starttime-value"><b>Animation Start Time (in ms):</b></label>
+                            <input type="text" class="form-control" id="anim-starttime-value" style="width: 15%; text-align: right; display: inline;" @bind-value="this.FieldAnimationsCopy[local].AnimationStartTime" />
+                        </div>
+
+                        <div class="form-group" style="padding: 5px;">
+                            <label for="anim-endtime-value"><b>Animation End Time (in ms):</b></label>
+                            <input type="text" class="form-control" id="anim-endtime-value" style="width: 15%; text-align: right; display: inline;" @bind-value="this.FieldAnimationsCopy[local].AnimationEndTime" />
+                        </div>
+
+                        <div class="form-group" style="padding: 5px;">
+                            <label for="anim-lane"><b>Lane:</b></label>
+                            <select class="form-select" aria-label="anim-lane" style="display: inline; width: 25%" @bind="this.FieldAnimationsCopy[local].Lane">
+                                <option selected>Select Lane...</option>
+                                @foreach (FieldLane lane in Enum.GetValues(typeof(FieldLane)))
+                                {
+                                    <option value="@lane">@lane.ToString()</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </TabPage>
+            }
+            <br />
+            <button @onclick="CreateFieldAnimation" class="btn btn-primary">Add Animation</button>
+        </TabControl>
+    </TabPage>
+</TabControl>
+
+@code {
+
+    [CascadingParameter] BlazoredModalInstance ModalInstance { get; set; }
+
+    [Parameter] public int FieldNoteId { get; set; }
+    [Parameter] public Dictionary<string, string> AllNoteTypes { get; set; }
+    [Parameter] public Difficulty Difficulty { get; set; }
+
+    public FieldNote FieldNote;
+    private FieldNote FieldNoteCopy { get; set; }
+    private List<FieldAnimation> FieldAnimationsCopy { get; set; } = new List<FieldAnimation>();
+
+    private EditFieldAsset EditFieldAsset { get; set; }
+
+    private string SelectedNoteType { get; set; }
+
+    List<FieldNote> PreviousNotes { get; set; } = new List<FieldNote>();
+    List<FieldNote> NextNotes { get; set; } = new List<FieldNote>();
+    List<FieldNote> ShooterNotes { get; set; } = new List<FieldNote>();
+
+    protected override void OnInitialized()
+    {
+        this.FieldNote = this.FieldChartService.LoadFieldNote(this.Difficulty, this.FieldNoteId);
+        this.FieldNoteCopy = this.FieldNote.Copy();
+
+        this.FieldNote.Animations.ForEach(x => this.FieldAnimationsCopy.Add(x));
+
+        this.SelectedNoteType = Utilities.GetEnumName(this.FieldNote.ModelType, this.FieldNote.NoteType, this.FieldNote.Unk3);
+
+        this.FieldNoteCopyChanged();
+    }
+
+    private async Task SaveFieldNote()
+    {
+        this.FieldNoteCopy.Animations = this.FieldAnimationsCopy;
+        this.FieldChartService.SaveFieldNote(this.Difficulty, ref this.FieldNote, this.FieldNoteCopy);
+
+        if (this.EditFieldAsset != null)
+        {
+            if (this.EditFieldAsset.FieldAsset.NoteIndex == -1)
+                this.FieldChartService.AddFieldAsset(this.Difficulty, this.EditFieldAsset.FieldAsset.HitTime, this.EditFieldAsset.FieldAsset.Lane, this.SelectedNoteType, this.EditFieldAsset.FieldAnimationsCopy);
+
+            this.FieldChartService.SaveFieldAsset(this.Difficulty, this.EditFieldAsset.FieldAsset, this.SelectedNoteType, this.EditFieldAsset.FieldAnimationsCopy);
+        }
+
+        await this.ModalInstance.CloseAsync(ModalResult.Ok<FieldNote>(this.FieldNote));
+    }
+
+    private async Task DeleteFieldNote()
+    {
+        this.FieldChartService.RemoveFieldNote(this.Difficulty, this.FieldNoteId);
+
+        foreach (var anim in this.FieldAnimationsCopy)
+            this.FieldChartService.RemoveFieldAnimation(this.Difficulty, this.FieldNote, anim.Id);
+
+        if (this.EditFieldAsset != null)
+        {
+            if (this.EditFieldAsset.FieldAsset.NoteIndex != -1)
+            {
+                this.FieldChartService.RemoveFieldAsset(this.Difficulty, this.EditFieldAsset.FieldAsset.NoteIndex);
+
+                foreach (var anim in this.EditFieldAsset.FieldAnimationsCopy)
+                    this.FieldChartService.RemoveFieldAnimation(this.Difficulty, this.EditFieldAsset.FieldAsset, anim.Id);
+            }
+        }
+
+        await this.ModalInstance.CloseAsync(ModalResult.Ok("Deleted"));
+    }
+
+    protected void CreateFieldAnimation()
+    {
+        this.FieldAnimationsCopy.Add(new FieldAnimation { AnimationEndTime = this.FieldNote.HitTime, AnimationStartTime = this.FieldNote.HitTime - 3000, Lane = this.FieldNote.Lane });
+    }
+
+    private void SelectedNoteTypeChanged(string selectNoteType)
+    {
+        this.SelectedNoteType = selectNoteType;
+
+        var modelType = FieldModelType.None;
+        var noteType = 0;
+        var altModel = 0;
+
+        switch (selectNoteType)
+        {
+            case "CommonEnemy":
+                modelType = FieldModelType.CommonEnemy;
+                break;
+            case "AerialCommonEnemy":
+                modelType = FieldModelType.AerialCommonEnemy;
+                break;
+            case "UncommonEnemy":
+                modelType = FieldModelType.UncommonEnemy;
+                break;
+            case "AerialUncommonEnemy":
+                modelType = FieldModelType.AerialUncommonEnemy;
+                break;
+            case "MultiHitGroundEnemy":
+                modelType = FieldModelType.MultiHitGroundEnemy;
+                break;
+            case "MultiHitAerialEnemy":
+                modelType = FieldModelType.MultiHitAerialEnemy;
+                break;
+            case "EnemyShooterProjectile":
+                modelType = FieldModelType.EnemyShooterProjectile;
+                noteType = 2;
+                break;
+            case "EnemyShooter":
+                modelType = FieldModelType.EnemyShooter;
+                break;
+            case "AerialEnemyShooterProjectile":
+                modelType = FieldModelType.AerialEnemyShooterProjectile;
+                noteType = 2;
+                break;
+            case "AerialEnemyShooter":
+                modelType = FieldModelType.AerialEnemyShooter;
+                break;
+            case "JumpingGroundEnemy":
+                modelType = FieldModelType.JumpingGroundEnemy;
+                break;
+            case "JumpingAerialEnemy":
+                modelType = FieldModelType.JumpingAerialEnemy;
+                break;
+            case "HiddenEnemy":
+                modelType = FieldModelType.HiddenEnemy;
+                break;
+            case "HittableAerialUncommonEnemy":
+                modelType = FieldModelType.HittableAerialUncommonEnemy;
+                break;
+            case "CrystalEnemyLeftRight":
+                modelType = FieldModelType.CrystalEnemyLeftRight;
+                noteType = 1;
+                break;
+            case "CrystalEnemyCenter":
+                modelType = FieldModelType.CrystalEnemyCenter;
+                noteType = 1;
+                break;
+            case "GlideNote":
+                modelType = FieldModelType.GlideNote;
+                noteType = 3;
+                break;
+            case "Barrel":
+                modelType = FieldModelType.Barrel;
+                noteType = 4;
+                break;
+            case "Crate":
+                modelType = FieldModelType.Crate;
+                noteType = 4;
+                altModel = 1;
+                break;
+            case "CrystalTeamHeal":
+                modelType = FieldModelType.CrystalTeamHeal;
+                noteType = 1;
+                break;
+        }
+
+        this.FieldNoteCopyChanged();
+
+        this.FieldNoteCopy.ModelType = modelType;
+        this.FieldNoteCopy.NoteType = noteType;
+        this.FieldNoteCopy.Unk3 = altModel;
+    }
+
+    private void FieldNoteCopyChanged()
+    {
+        if (this.SelectedNoteType == "MultiHitGroundEnemy")
+        {
+            var multiNotes = this.FieldChartService.GetFieldNotes(this.Difficulty).Where(x => x.ModelType == FieldModelType.MultiHitGroundEnemy);
+            this.PreviousNotes = multiNotes.Where(x => x.HitTime <= this.FieldNoteCopy.HitTime).ToList();
+            this.NextNotes = multiNotes.Where(x => x.HitTime >= this.FieldNoteCopy.HitTime).ToList();
+        }
+        else if (this.SelectedNoteType == "MultiHitAerialEnemy")
+        {
+            var multiAerialNotes = this.FieldChartService.GetFieldNotes(this.Difficulty).Where(x => x.ModelType == FieldModelType.MultiHitAerialEnemy);
+            this.PreviousNotes = multiAerialNotes.Where(x => x.HitTime <= this.FieldNoteCopy.HitTime).ToList();
+            this.NextNotes = multiAerialNotes.Where(x => x.HitTime >= this.FieldNoteCopy.HitTime).ToList();
+        }
+        else if (this.SelectedNoteType == "EnemyShooterProjectile")
+        {
+            this.ShooterNotes = this.FieldChartService.GetFieldNotes(this.Difficulty).Where(x => x.HitTime >= this.FieldNoteCopy.HitTime && x.ModelType == FieldModelType.EnemyShooter && x.NoteType == 0).ToList();
+        }
+        else if (this.SelectedNoteType == "AerialEnemyShooterProjectile")
+        {
+            this.ShooterNotes = this.FieldChartService.GetFieldNotes(this.Difficulty).Where(x => x.HitTime >= this.FieldNoteCopy.HitTime && x.ModelType == FieldModelType.AerialEnemyShooter && x.NoteType == 0).ToList();
+        }
+        else if (this.SelectedNoteType == "GlideNote")
+        {
+            var glideNotes = this.FieldChartService.GetFieldNotes(this.Difficulty).Where(x => x.ModelType == FieldModelType.GlideNote);
+            this.PreviousNotes = glideNotes.Where(x => x.HitTime <= this.FieldNoteCopy.HitTime).ToList();
+            this.NextNotes = glideNotes.Where(x => x.HitTime >= this.FieldNoteCopy.HitTime).ToList();
+        }
+    }
+}

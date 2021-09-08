@@ -1,0 +1,536 @@
+﻿@using MoMMusicAnalysis;
+@using ReChart.Logic;
+@using ReChart.Services;
+@using ReChart.Interfaces;
+@using ReChart.ViewModels.ReChart;
+@using ReChart.Enums;
+
+@inject IBossChartService BossChartService
+
+<div id="@this.Id">
+    <div id="@(this.Id)-content">
+        <div class="card" style="border-top-right-radius: 0rem; border-top-left-radius: 0rem;">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col-md-4">
+                        <label for="song-length">Song Length:</label>
+                        <input class="form-control" type="text" id="song-length-value" style="width: 25%; text-align: right; display: inline;" @bind-value="@this.length" />
+                    </div>
+                    <div class="col-md-4" style="display: flex; justify-content: center; align-items: center;">
+                        <b><u style="font-size: 20px;">@this.SongTitle</u></b>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="button" class="btn btn-primary" style="float: right;" @onclick="ShowBossOptions">Options</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                @* Max Height for now is 135px *@
+                <div style="overflow-x: auto; overflow-y: hidden; border-top-right-radius: 0.25rem; border-top-left-radius: 0.25rem; max-height: 135px;" tabindex="0" @ref="ChartReference" @onkeydown="KeyboardEventListener">
+                    @foreach (BossLane lane in Enum.GetValues(typeof(BossLane)))
+                    {
+                        <div style="width: @(length + 500)px; height: 30pt; background-color: @("#FFB6B3")" @onmousemove="@(e => this.MouseOverChart(e, lane))" @onclick="PlaceNote"
+                             @onmouseout="MouseOutChart" @ondrop="@((DragEventArgs e) => OnDropNote(e, lane))" @ondragover="@((DragEventArgs e) => OnDragNote(e, lane))" @ondragover:preventDefault="true">
+                            <BossChartLane Length="@(this.length + 500)" Lane="@lane" OnDropNote="@OnDropNote" OnDragNote="@OnDragNote">
+                                <div id="Notes">
+                                    @foreach (var note in this.DisplayNotes["BossNote"].Where(x => x.Lane == lane))
+                                    {
+                                        <BossChartNote Type="BossNote" DisplayNote="@note" ParentMethod="@ShowEditNote" OnDragNoteStart="@OnDragNoteStart" />
+                                    }
+                                </div>
+                                <div id="Performers">
+                                    @foreach (var performer in this.DisplayNotes["PerformerNote"].Where(x => x.Lane == lane))
+                                    {
+                                        <BossChartNote Type="PerformerNote" DisplayNote="@performer" ParentMethod="@ShowEditNote" OnDragNoteStart="@OnDragNoteStart" />
+                                    }
+                                </div>
+                                <div id="Tempos">
+                                    @foreach (var tempo in this.DisplayNotes["Tempo"].Where(x => x.Lane == lane))
+                                    {
+                                        <BossChartNote Type="Tempo" DisplayNote="@tempo" ParentMethod="@ShowEditNote" OnDragNoteStart="@OnDragNoteStart" />
+                                    }
+                                </div>
+                                <div id="DarkZones">
+                                    @foreach (var darkZone in this.DisplayNotes["DarkZone"].Where(x => x.Lane == lane))
+                                    {
+                                        <BossChartNote Type="DarkZone" DisplayNote="@darkZone" ParentMethod="@ShowEditNote" OnDragNoteStart="@OnDragNoteStart" />
+                                    }
+                                </div>
+
+                                @if (this.PlaceholderDisplayNote != null && this.PlaceholderDisplayNote.Lane == lane)
+                                {
+                                    <button id="placeholder-display-note" class="btn-sm rechart-button" title="@this.PlaceholderDisplayNote.HitTime.ToString()"
+                                            style="left: @(this.PlaceholderDisplayNote.HitTime)px; position: absolute; background-image: url('@this.PlaceholderDisplayNote.Image'); opacity: 0.4;" />
+
+                                    <div style="left: @(this.PlaceholderDisplayNote.HitTime)px; top: @(this.PlaceholderDisplayNote.Lane == BossLane.PlayerTop ? "30px" : "-50px"); position: absolute; background-color: #C6C9CE; border-radius: 0.25rem; z-index: 5;">
+                                        <label><b>@this.PlaceholderDisplayNote.HitTime</b></label>
+                                    </div>
+                                }
+                                else if (this.DragNote != null && this.DropLane == lane)
+                                {
+                                    <div style="left: @(this.DropTime)px; top: @(this.DropLane == BossLane.PlayerTop ? "30px" : "-50px"); position: absolute; background-color: #C6C9CE; border-radius: 0.25rem; z-index: 5;">
+                                        <label><b>@this.DropTime</b></label>
+                                    </div>
+                                }
+                            </BossChartLane>
+                        </div>
+                    }
+
+                    @foreach (var beat in this.BeatService.CurrentBeats)
+                    {
+                        if (beat != null)
+                        {
+                            <div style="display: inline-block; position: relative; float: left; background-color: @(beat.Color == System.Drawing.Color.MediumPurple ? "mediumpurple" : "purple"); width: 2pt; height: 15vh; left: @(beat.Location.X)px; top: -15vh;"></div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="@(this.Id)-notes">
+        <div class="row">
+            <div class="col-md-12">
+                <div id="notes" class="card" style="margin-top: 5px;">
+                    <div class="card-header">
+                        Select Note to Place
+                    </div>
+                    <div class="card-body">
+                        <NoteChoices Title="Boss Notes" Type="BossNote" ImageTypes="@this.AllNoteTypes" @bind-ActiveNote="this.SelectedNoteType" SelectedNoteTypeChanged="this.SelectedNoteTypeChanged" />
+                        <br />
+                        <NoteChoices Title="Performer Notes" Type="PerformerNote" ImageTypes="@this.AllPerformerTypes" @bind-ActiveNote="this.SelectedNoteType" SelectedNoteTypeChanged="this.SelectedNoteTypeChanged" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8">
+                <div id="quick-place" class="card" style="margin-top: 5px;">
+                    <div class="card-header">
+                        Quick Place
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label for="quick-place-time">Time:</label>
+                                <input class="form-control" type="text" id="quick-place-time" style="width: 50%; text-align: right; display: inline;" @bind-value="@this.QuickPlaceTime" />
+                            </div>
+                            <div class="col-md-7">
+                                <label for="quick-place-lane">Lane:</label>
+                                <select class="form-select" aria-label="quick-place-lane" style="display: inline; width: 60%" @bind="@this.QuickPlaceLane">
+                                    <option selected>Select Lane...</option>
+                                    @foreach (BossLane lane in Enum.GetValues(typeof(BossLane)))
+                                    {
+                                        <option value="@lane">@lane.ToString()</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-1">
+                                <button type="button" class="btn btn-primary" style="float: right;" @onclick="(() => QuickPlace(this.QuickPlaceTime, this.QuickPlaceLane, this.SelectedNoteType))">Place</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<br />
+
+@code {
+    [CascadingParameter] public IModalService Modal { get; set; }
+
+    [Parameter] public string Id { get; set; }
+    [Parameter] public string SongTitle { get; set; }
+    [Parameter] public Difficulty Difficulty { get; set; }
+    [Parameter] public Dictionary<string, List<BossNoteDisplay>> DisplayNotes { get; set; }
+
+    public string SelectedNoteType { get; set; }
+
+    public Dictionary<string, string> AllNoteTypes { get; set; }
+    public Dictionary<string, string> SwipeDirections { get; set; }
+    public Dictionary<string, string> AllPerformerTypes { get; set; }
+
+    public int QuickPlaceTime { get; set; }
+    public BossLane QuickPlaceLane { get; set; }
+
+    private int length { get; set; }
+
+    private BossNoteDisplay PlaceholderDisplayNote { get; set; }
+    private BossNoteDisplay DragNote { get; set; }
+    private int DropTime { get; set; }
+    private BossLane DropLane { get; set; }
+
+    private BeatService<BossLane> BeatService { get; set; }
+    private ElementReference ChartReference { get; set; }
+    private Line ClosestTime { get; set; }
+
+    private Dictionary<string, bool> ChartDisplays { get; set; }
+    private string currentBeat { get; set; } = "3";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        this.BeatService = new BeatService<BossLane>();
+        this.BeatService.UpdateCurrentBeats("3");
+        //this.BeatService.CalculateOffset(this.BossChartService.GetBossNotes(this.Difficulty));
+
+        this.length = this.DisplayNotes.Count > 0 ? this.DisplayNotes["BossNote"][^1].HitTime : 5000;
+
+        this.AllNoteTypes = new Dictionary<string, string>
+{
+            { "Normal", Utilities.GetImage(BossNoteType.Normal) },
+            { "HoldStart", Utilities.GetImage(BossNoteType.HoldStart) },
+            { "HoldEnd", Utilities.GetImage(BossNoteType.HoldEnd) },
+            { "Swipe", Utilities.GetImage(BossNoteType.Swipe) },
+            { "Crystal", Utilities.GetImage(BossNoteType.Crystal) },
+            { "DarkZone", Utilities.GetImage("DarkZone") }
+        };
+
+        this.SwipeDirections = new Dictionary<string, string>
+{
+            { "Up", Utilities.GetImage(BossNoteType.Swipe) },
+            { "Right", Utilities.GetImage(BossNoteType.Swipe) },
+            { "Down", Utilities.GetImage(BossNoteType.Swipe) },
+            { "Left", Utilities.GetImage(BossNoteType.Swipe) }
+        };
+
+        this.ChartDisplays = new Dictionary<string, bool>
+    {
+            { "Notes", true },
+            { "Performers", true },
+            { "DarkZones", true },
+            { "Tempos", true }
+        };
+
+        this.AllPerformerTypes = Enum.GetNames<PerformerType>().ToDictionary(x => x, y => $"/images/ReChart/PerformerNotes/{y}.png");
+    }
+
+    protected void OnDragNoteStart(BossNoteDisplay memoryNoteDisplay)
+    {
+        this.DragNote = memoryNoteDisplay;
+        this.DropLane = memoryNoteDisplay.Lane;
+    }
+
+    protected void OnDragNote(DragEventArgs dragEventArgs, BossLane lane)
+    {
+        this.DropTime = (int)dragEventArgs.OffsetX;
+        this.DropLane = lane;
+    }
+
+    protected void OnDropNote(DragEventArgs dragEventArgs, BossLane lane)
+    {
+        if (this.DragNote == null)
+            return;
+
+        this.DragNote.HitTime = (int)dragEventArgs.OffsetX;
+
+        if (this.DragNote.Image.Split('/')[^2].Contains("Boss"))
+        {
+            var memoryNote = this.BossChartService.LoadBossNote(this.Difficulty, this.DragNote.NoteIndex);
+            this.DragNote.Lane = lane;
+
+            this.BossChartService.RemoveBossNote(this.Difficulty, this.DragNote.NoteIndex);
+            this.BossChartService.AddBossNote(this.Difficulty, (int)dragEventArgs.OffsetX, lane, memoryNote.BossNoteType.ToString());
+
+            this.DisplayNotes["BossNote"][this.DragNote.NoteIndex] = this.DragNote;
+        }
+        else if (this.DragNote.Image.Split('/')[^2].Contains("Performer"))
+        {
+            var performerNote = this.BossChartService.LoadBossPerformerNote(this.Difficulty, this.DragNote.NoteIndex);
+            this.DragNote.Lane = lane;
+
+            this.BossChartService.RemovePerformerNote(this.Difficulty, this.DragNote.NoteIndex);
+            this.BossChartService.AddPerformerNote(this.Difficulty, (int)dragEventArgs.OffsetX, lane, performerNote.PerformerType);
+
+            this.DisplayNotes["PerformerNote"][this.DragNote.NoteIndex] = this.DragNote;
+        }
+        else if (this.DragNote.Image.Split('/')[^2].Contains("Tempo"))
+        {
+            var tempo = this.BossChartService.LoadBossTempo(this.Difficulty, this.DragNote.NoteIndex);
+
+            this.BossChartService.RemoveBossTempo(this.Difficulty, this.DragNote.NoteIndex);
+            this.BossChartService.AddBossTempo(this.Difficulty, (int)dragEventArgs.OffsetX, tempo.Speed);
+
+            this.DisplayNotes["Tempo"][this.DragNote.NoteIndex] = this.DragNote;
+        }
+        else if (this.DragNote.Image.Split('/')[^2].Contains("Dark"))
+        {
+            var darkZone = this.BossChartService.LoadBossDarkZone(this.Difficulty, this.DragNote.NoteIndex);
+
+            this.BossChartService.RemoveBossDarkZone(this.Difficulty, this.DragNote.NoteIndex);
+            this.BossChartService.AddBossDarkZone(this.Difficulty, (int)dragEventArgs.OffsetX, darkZone.EndTime, darkZone.EndAttackTime);
+
+            this.DisplayNotes["DarkZone"][this.DragNote.NoteIndex] = this.DragNote;
+        }
+
+        this.DragNote = null;
+    }
+
+    protected async Task ShowEditNote(string noteType, int noteId)
+    {
+        IModalReference editModal;
+        var parameters = new ModalParameters();
+        var options = new ModalOptions()
+        {
+            Animation = ModalAnimation.FadeInOut(0.2)
+        };
+
+        if (noteType == "BossNote")
+        {
+            parameters.Add("BossNoteId", noteId);
+            parameters.Add("AllNoteTypes", this.AllNoteTypes);
+            parameters.Add("SwipeDirections", this.SwipeDirections);
+            parameters.Add("Difficulty", this.Difficulty);
+
+            editModal = Modal.Show<EditBossNote>($"Edit Boss Note { noteId }", parameters, options);
+            var result = await editModal.Result;
+
+            if (!result.Cancelled)
+            {
+                if (result.Data.GetType() == typeof(BossNote))
+                {
+                    var memoryNote = (BossNote)result.Data;
+
+                    this.DisplayNotes["BossNote"].FirstOrDefault(x => x.NoteIndex == noteId).HitTime = memoryNote.HitTime;
+                    this.DisplayNotes["BossNote"].FirstOrDefault(x => x.NoteIndex == noteId).Image = Utilities.GetImage(memoryNote.BossNoteType);
+                    this.DisplayNotes["BossNote"].FirstOrDefault(x => x.NoteIndex == noteId).Lane = memoryNote.Lane;
+                }
+                else if (result.Data.GetType() == typeof(string))
+                {
+                    if (result.Data.ToString() == "Deleted")
+                    {
+                        this.DisplayNotes["BossNote"].RemoveAt(noteId);
+
+                        // Redo Note Indexes
+                        var index = 0;
+                        this.DisplayNotes["BossNote"].OrderBy(x => x.HitTime).ToList().ForEach(x => x.NoteIndex = index++);
+                    }
+                }
+            }
+        }
+        else if (noteType == "PerformerNote")
+        {
+            parameters.Add("PerformerNoteId", noteId);
+            parameters.Add("AllPerformerTypes", this.AllPerformerTypes);
+            parameters.Add("Difficulty", this.Difficulty);
+
+            editModal = Modal.Show<EditBossPerformerNote>($"Edit Performer Note { noteId }", parameters, options);
+            var result = await editModal.Result;
+
+            if (!result.Cancelled)
+            {
+                if (result.Data.GetType() == typeof(PerformerNote<BossLane>))
+                {
+                    var performerNote = (PerformerNote<BossLane>)result.Data;
+
+                    this.DisplayNotes["PerformerNote"].FirstOrDefault(x => x.NoteIndex == noteId).HitTime = performerNote.HitTime;
+                    this.DisplayNotes["PerformerNote"].FirstOrDefault(x => x.NoteIndex == noteId).Image = Utilities.GetImage(performerNote.PerformerType);
+                    this.DisplayNotes["PerformerNote"].FirstOrDefault(x => x.NoteIndex == noteId).Lane = performerNote.Lane;
+                }
+                else if (result.Data.GetType() == typeof(string))
+                {
+                    if (result.Data.ToString() == "Deleted")
+                    {
+                        this.DisplayNotes["PerformerNote"].RemoveAt(noteId);
+
+                        // Redo Note Indexes
+                        var index = 0;
+                        this.DisplayNotes["PerformerNote"].OrderBy(x => x.HitTime).ToList().ForEach(x => x.NoteIndex = index++);
+                    }
+                }
+            }
+        }
+        else if (noteType == "Tempo")
+        {
+            parameters.Add("TempoId", noteId);
+            parameters.Add("Difficulty", this.Difficulty);
+
+            editModal = Modal.Show<EditBossTempo>($"Edit Tempo { noteId }", parameters, options);
+            var result = await editModal.Result;
+
+            if (!result.Cancelled)
+            {
+                if (result.Data.GetType() == typeof(TimeShift<BossLane>))
+                {
+                    var tempo = (TimeShift<BossLane>)result.Data;
+
+                    this.DisplayNotes["Tempo"].FirstOrDefault(x => x.NoteIndex == noteId).HitTime = tempo.HitTime;
+                }
+                else if (result.Data.GetType() == typeof(string))
+                {
+                    if (result.Data.ToString() == "Deleted")
+                    {
+                        this.DisplayNotes["Tempo"].RemoveAt(noteId);
+
+                        // Redo Note Indexes
+                        var index = 0;
+                        this.DisplayNotes["Tempo"].OrderBy(x => x.HitTime).ToList().ForEach(x => x.NoteIndex = index++);
+                    }
+                }
+            }
+        }
+        else if (noteType == "DarkZone")
+        {
+            parameters.Add("DarkZoneId", noteId);
+            parameters.Add("Difficulty", this.Difficulty);
+
+            editModal = Modal.Show<EditBossDarkZone>($"Edit Dark Zone { noteId }", parameters, options);
+            var result = await editModal.Result;
+
+            if (!result.Cancelled)
+            {
+                if (result.Data.GetType() == typeof(TimeShift<BossLane>))
+                {
+                    var darkZone = (BossDarkZone)result.Data;
+
+                    this.DisplayNotes["DarkZone"].FirstOrDefault(x => x.NoteIndex == noteId).HitTime = darkZone.HitTime;
+                }
+                else if (result.Data.GetType() == typeof(string))
+                {
+                    if (result.Data.ToString() == "Deleted")
+                    {
+                        this.DisplayNotes["DarkZone"].RemoveAt(noteId);
+
+                        // Redo Note Indexes
+                        var index = 0;
+                        this.DisplayNotes["DarkZone"].OrderBy(x => x.HitTime).ToList().ForEach(x => x.NoteIndex = index++);
+                    }
+                }
+            }
+        }
+
+        StateHasChanged();
+    }
+
+    protected async Task ShowBossOptions()
+    {
+        IModalReference editModal;
+        var parameters = new ModalParameters();
+        var options = new ModalOptions()
+        {
+            Animation = ModalAnimation.FadeInOut(0.2)
+        };
+
+        parameters.Add("Chart", Settings.Configurations.KeyConfigs.BossBattle);
+
+        editModal = Modal.Show<EditOptions>($"Edit Boss Options", parameters, options);
+        var result = await editModal.Result;
+
+        if (result.Cancelled)
+            Settings.LoadSettings();
+    }
+
+    protected void SelectedNoteTypeChanged(string type)
+    {
+        this.SelectedNoteType = type;
+        this.ChartReference.FocusAsync();
+
+        if (string.IsNullOrEmpty(this.SelectedNoteType))
+        {
+            this.PlaceholderDisplayNote = null;
+        }
+        else if (this.PlaceholderDisplayNote != null)
+        {
+            if (this.AllNoteTypes.ContainsKey(type))
+                this.PlaceholderDisplayNote.Image = this.AllNoteTypes[type];
+            else if (this.AllPerformerTypes.ContainsKey(type))
+                this.PlaceholderDisplayNote.Image = this.AllPerformerTypes[type];
+        }
+    }
+
+    protected void QuickPlace(int time, BossLane lane, string modelType)
+    {
+        if (Enum.TryParse<BossNoteType>(modelType, out var memoryNoteType))
+        {
+            // Add to song notes
+            this.BossChartService.AddBossNote(this.Difficulty, time, lane, modelType);
+            var memoryNote = this.BossChartService.LoadBossNote(this.Difficulty, this.DisplayNotes["BossNote"].Count);
+
+            // Add to display notes
+            this.DisplayNotes["BossNote"].Add(new BossNoteDisplay { HitTime = time, Lane = lane, NoteIndex = this.DisplayNotes["BossNote"].Count, Image = Utilities.GetImage(memoryNoteType) });
+        }
+        else if (Enum.TryParse<PerformerType>(modelType, out var performerType))
+        {
+            // Add to song notes
+            this.BossChartService.AddPerformerNote(this.Difficulty, time, lane, performerType);
+
+            // Add to display notes
+            this.DisplayNotes["PerformerNote"].Add(new BossNoteDisplay { HitTime = time, Lane = lane, NoteIndex = this.DisplayNotes["PerformerNote"].Count, Image = Utilities.GetImage(performerType) });
+        }
+    }
+
+    protected void MouseOverChart(MouseEventArgs mouseEventArgs, BossLane lane)
+    {
+        if (string.IsNullOrEmpty(this.SelectedNoteType))
+            return;
+
+        if (this.PlaceholderDisplayNote == null)
+        {
+            this.PlaceholderDisplayNote = new BossNoteDisplay();
+
+            if (this.AllNoteTypes.ContainsKey(this.SelectedNoteType))
+                this.PlaceholderDisplayNote.Image = this.AllNoteTypes[this.SelectedNoteType];
+            else if (this.AllPerformerTypes.ContainsKey(this.SelectedNoteType))
+                this.PlaceholderDisplayNote.Image = this.AllPerformerTypes[this.SelectedNoteType];
+        }
+
+        this.PlaceholderDisplayNote.HitTime = ((int)mouseEventArgs.OffsetX) - 35;
+        this.PlaceholderDisplayNote.Lane = lane;
+
+        this.BeatService.DisplayChartBeats(this.BossChartService.GetTempos(this.Difficulty), this.PlaceholderDisplayNote.HitTime);
+
+        this.ClosestTime = Settings.CurrentBeat != Beat.None ? this.BeatService.SnapToBeat(this.PlaceholderDisplayNote.HitTime) : null;
+
+        if (this.currentBeat != Settings.Configurations.KeyConfigs.Beats["Whole"] && this.BeatService.CurrentBeats.Count == 0)
+            this.BeatService.UpdateCurrentBeats(this.currentBeat);
+    }
+
+    protected void MouseOutChart(MouseEventArgs mouseEventArgs)
+    {
+        this.PlaceholderDisplayNote = null;
+
+        this.BeatService.RemoveChartBeats();
+    }
+
+    protected void PlaceNote()
+    {
+        if (this.PlaceholderDisplayNote == null)
+            return;
+
+        if (this.ClosestTime != null)
+            this.QuickPlace(this.ClosestTime.Location.X, this.PlaceholderDisplayNote.Lane, this.SelectedNoteType);
+        else
+            this.QuickPlace(this.PlaceholderDisplayNote.HitTime, this.PlaceholderDisplayNote.Lane, this.SelectedNoteType);
+    }
+
+    protected void KeyboardEventListener(KeyboardEventArgs keyboardEventArgs)
+    {
+        foreach (var noteConfig in Settings.Configurations.KeyConfigs.BossBattle.Notes)
+        {
+            if (keyboardEventArgs.Key == noteConfig.Value)
+            {
+                this.SelectedNoteTypeChanged(noteConfig.Key);
+
+                return;
+            }
+        }
+
+        foreach (var displayConfig in Settings.Configurations.KeyConfigs.BossBattle.Displays)
+        {
+            if (keyboardEventArgs.CtrlKey && keyboardEventArgs.Key == displayConfig.Value)
+            {
+                this.ChartDisplays[displayConfig.Key] = !this.ChartDisplays[displayConfig.Key];
+
+                return;
+            }
+        }
+
+        this.BeatService.UpdateCurrentBeats(keyboardEventArgs.Key);
+
+        this.currentBeat = keyboardEventArgs.Key;
+    }
+}

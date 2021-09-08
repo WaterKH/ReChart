@@ -1,0 +1,55 @@
+﻿<div class="top-row pl-4 navbar navbar-dark">
+    <a class="navbar-brand" style="padding-left: 10px;">MoM Re:Chart</a>
+    @*<button class="navbar-toggler" @onclick="ToggleNavMenu">
+        <span class="navbar-toggler-icon"></span>
+    </button>*@
+</div>
+
+<div @onclick="ToggleNavMenu">
+    <ul class="nav flex-column">
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="oi oi-musical-note"></span> Re:Chart
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link disabled" href="remodel">
+                <span class="oi oi-person"></span> Re:Model
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link disabled" href="retexture">
+                <span class="oi oi-image"></span> Re:Texture
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link disabled" href="resave">
+                <span class="oi oi-hard-drive"></span> Re:Save
+            </NavLink>
+        </li>
+    </ul>
+
+    <ul class="nav flex-column fixed-bottom" style="position: absolute !important">
+        <li class="nav-item px-3">
+            <NavLink class="nav-link disabled" href="decryptpatch">
+                <span class="oi oi-lock-unlocked"></span> Decrypt/ Patch
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="info" Match="NavLinkMatch.All">
+                <span class="oi oi-info"></span> Info
+            </NavLink>
+        </li>
+    </ul>
+</div>
+
+@code {
+    private bool collapseNavMenu = true;
+
+    private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+}

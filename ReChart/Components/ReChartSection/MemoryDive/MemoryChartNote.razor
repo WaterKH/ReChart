@@ -1,0 +1,22 @@
+﻿@using ReChart.ViewModels.ReChart
+
+<button id="@(this.Type)-@(this.DisplayNote.NoteIndex)" class="btn-sm rechart-button" @onclick="InvokeParentMethod" draggable="true" @ondragstart="InvokeOnDragNoteStart" title="@this.DisplayNote.HitTime.ToString()" 
+        style="left: @(this.DisplayNote.HitTime)px; position: absolute; background-image: url('@this.DisplayNote.Image');"></button>
+
+@code {
+    [Parameter] public string Type { get; set; }
+    [Parameter] public MemoryNoteDisplay DisplayNote { get; set; }
+
+    [Parameter] public Func<string, int, Task> ParentMethod { get; set; }
+    [Parameter] public Action<MemoryNoteDisplay> OnDragNoteStart { get; set; }
+
+    private async Task InvokeParentMethod()
+    {
+        await this.ParentMethod?.Invoke(this.Type, this.DisplayNote.NoteIndex);
+    }
+
+    private void InvokeOnDragNoteStart()
+    {
+        this.OnDragNoteStart?.Invoke(this.DisplayNote);
+    }
+}
