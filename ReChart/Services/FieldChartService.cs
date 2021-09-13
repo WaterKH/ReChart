@@ -196,7 +196,7 @@ namespace ReChart.Services
 
             if ((fieldModelType.Contains("Aerial") && (!fieldModelType.Contains("Hittable") && !fieldModelType.Contains("Projectile"))) || fieldModelType.Contains("Glide"))
             {
-                var tempAsset = fieldBattleSong.FieldAssets.FirstOrDefault(x => fieldNoteHitTime == (x.HitTime - currentTempo.Speed));
+                var tempAsset = fieldBattleSong.FieldAssets.LastOrDefault(x => (fieldNoteHitTime - 650) <= x.HitTime && fieldNoteHitTime >= x.HitTime);
 
                 if (tempAsset != null)
                     asset = new FieldNoteDisplay() { NoteIndex = fieldBattleSong.FieldAssets.OrderBy(x => x.HitTime).ToList().IndexOf(tempAsset), HitTime = tempAsset.HitTime, Lane = tempAsset.Lane, Image = Utilities.GetImage(tempAsset.ModelType) };
@@ -205,7 +205,7 @@ namespace ReChart.Services
             }
             else if (fieldModelType.Contains("Projectile"))
             {
-                var tempAsset = fieldBattleSong.FieldAssets.FirstOrDefault(x => fieldNoteHitTime == x.HitTime);
+                var tempAsset = fieldBattleSong.FieldAssets.LastOrDefault(x => (fieldNoteHitTime - 650) <= x.HitTime && fieldNoteHitTime >= x.HitTime);
 
                 if (tempAsset != null)
                     asset = new FieldNoteDisplay() { NoteIndex = fieldBattleSong.FieldAssets.OrderBy(x => x.HitTime).ToList().IndexOf(tempAsset), HitTime = tempAsset.HitTime, Lane = tempAsset.Lane, Image = Utilities.GetImage(tempAsset.ModelType) };
@@ -214,7 +214,7 @@ namespace ReChart.Services
             }
             else if (fieldModelType.Contains("Crystal"))
             {
-                var tempAsset = fieldBattleSong.FieldAssets.FirstOrDefault(x => (fieldNoteHitTime + 1000) <= x.HitTime && (fieldNoteHitTime + 2500) >= x.HitTime);
+                var tempAsset = fieldBattleSong.FieldAssets.LastOrDefault(x => (fieldNoteHitTime + 1000) <= x.HitTime && (fieldNoteHitTime + 2500) >= x.HitTime);
 
                 if (tempAsset != null)
                     asset = new FieldNoteDisplay() { NoteIndex = fieldBattleSong.FieldAssets.OrderBy(x => x.HitTime).ToList().IndexOf(tempAsset), HitTime = tempAsset.HitTime, Lane = tempAsset.Lane, Image = Utilities.GetImage(tempAsset.ModelType) };

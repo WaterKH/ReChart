@@ -1,0 +1,12 @@
+﻿@page "/info"
+
+@using ReChart.Services
+
+@inject ElectronService ElectronService
+
+<label style="color: white;">
+    Current Version: @ElectronService.UpdateInfo
+</label>
+<div>
+    <button type="button" class="btn btn-primary" @onclick="ElectronService.CheckUpdate">Check For Update</button>
+</div>

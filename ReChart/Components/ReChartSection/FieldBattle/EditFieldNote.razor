@@ -176,19 +176,19 @@
 
     private async Task DeleteFieldNote()
     {
-        this.FieldChartService.RemoveFieldNote(this.Difficulty, this.FieldNoteId);
-
         foreach (var anim in this.FieldAnimationsCopy)
             this.FieldChartService.RemoveFieldAnimation(this.Difficulty, this.FieldNote, anim.Id);
+
+        this.FieldChartService.RemoveFieldNote(this.Difficulty, this.FieldNoteId);
 
         if (this.EditFieldAsset != null)
         {
             if (this.EditFieldAsset.FieldAsset.NoteIndex != -1)
             {
-                this.FieldChartService.RemoveFieldAsset(this.Difficulty, this.EditFieldAsset.FieldAsset.NoteIndex);
-
                 foreach (var anim in this.EditFieldAsset.FieldAnimationsCopy)
                     this.FieldChartService.RemoveFieldAnimation(this.Difficulty, this.EditFieldAsset.FieldAsset, anim.Id);
+
+                this.FieldChartService.RemoveFieldAsset(this.Difficulty, this.EditFieldAsset.FieldAsset.NoteIndex);
             }
         }
 
@@ -293,28 +293,28 @@
         if (this.SelectedNoteType == "MultiHitGroundEnemy")
         {
             var multiNotes = this.FieldChartService.GetFieldNotes(this.Difficulty).Where(x => x.ModelType == FieldModelType.MultiHitGroundEnemy);
-            this.PreviousNotes = multiNotes.Where(x => x.HitTime <= this.FieldNoteCopy.HitTime).ToList();
-            this.NextNotes = multiNotes.Where(x => x.HitTime >= this.FieldNoteCopy.HitTime).ToList();
+            this.PreviousNotes = multiNotes.Where(x => x.HitTime < this.FieldNoteCopy.HitTime).ToList();
+            this.NextNotes = multiNotes.Where(x => x.HitTime > this.FieldNoteCopy.HitTime).ToList();
         }
         else if (this.SelectedNoteType == "MultiHitAerialEnemy")
         {
             var multiAerialNotes = this.FieldChartService.GetFieldNotes(this.Difficulty).Where(x => x.ModelType == FieldModelType.MultiHitAerialEnemy);
-            this.PreviousNotes = multiAerialNotes.Where(x => x.HitTime <= this.FieldNoteCopy.HitTime).ToList();
-            this.NextNotes = multiAerialNotes.Where(x => x.HitTime >= this.FieldNoteCopy.HitTime).ToList();
+            this.PreviousNotes = multiAerialNotes.Where(x => x.HitTime < this.FieldNoteCopy.HitTime).ToList();
+            this.NextNotes = multiAerialNotes.Where(x => x.HitTime > this.FieldNoteCopy.HitTime).ToList();
         }
         else if (this.SelectedNoteType == "EnemyShooterProjectile")
         {
-            this.ShooterNotes = this.FieldChartService.GetFieldNotes(this.Difficulty).Where(x => x.HitTime >= this.FieldNoteCopy.HitTime && x.ModelType == FieldModelType.EnemyShooter && x.NoteType == 0).ToList();
+            this.ShooterNotes = this.FieldChartService.GetFieldNotes(this.Difficulty).Where(x => x.HitTime > this.FieldNoteCopy.HitTime && x.ModelType == FieldModelType.EnemyShooter && x.NoteType == 0).ToList();
         }
         else if (this.SelectedNoteType == "AerialEnemyShooterProjectile")
         {
-            this.ShooterNotes = this.FieldChartService.GetFieldNotes(this.Difficulty).Where(x => x.HitTime >= this.FieldNoteCopy.HitTime && x.ModelType == FieldModelType.AerialEnemyShooter && x.NoteType == 0).ToList();
+            this.ShooterNotes = this.FieldChartService.GetFieldNotes(this.Difficulty).Where(x => x.HitTime > this.FieldNoteCopy.HitTime && x.ModelType == FieldModelType.AerialEnemyShooter && x.NoteType == 0).ToList();
         }
         else if (this.SelectedNoteType == "GlideNote")
         {
             var glideNotes = this.FieldChartService.GetFieldNotes(this.Difficulty).Where(x => x.ModelType == FieldModelType.GlideNote);
-            this.PreviousNotes = glideNotes.Where(x => x.HitTime <= this.FieldNoteCopy.HitTime).ToList();
-            this.NextNotes = glideNotes.Where(x => x.HitTime >= this.FieldNoteCopy.HitTime).ToList();
+            this.PreviousNotes = glideNotes.Where(x => x.HitTime < this.FieldNoteCopy.HitTime).ToList();
+            this.NextNotes = glideNotes.Where(x => x.HitTime > this.FieldNoteCopy.HitTime).ToList();
         }
     }
 }

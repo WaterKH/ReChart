@@ -157,6 +157,57 @@ app {
     width: 60%;
 }
 
+.kh-button {
+    width: 150px !important;
+    height: 150px !important;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: auto;
+    margin-left: auto;
+    padding: 0;
+}
+
+.child-kh-button {
+    width: 100%;
+    height: 100%;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    transition: all .3s;
+}
+
+.kh-button:hover .child-kh-button,
+.kh-button:focus .child-kh-button {
+    transform: scale(1.1);
+}
+
+/* Darkened overlay with text */
+.overlay {
+    position: absolute;
+    height: inherit;
+    width: inherit;
+    opacity: 0;
+    transition: all .7s ease;
+    background-color: #000000;
+    border-radius: inherit;
+}
+
+.kh-button:hover .overlay {
+    opacity: .5;
+}
+
+.kh-text {
+    color: white;
+    font-size: 20px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    -webkit-transform: translate(-50%, -50%);
+    -ms-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
 #blazor-error-ui {
     background: lightyellow;
     bottom: 0;

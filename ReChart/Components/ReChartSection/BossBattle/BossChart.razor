@@ -20,7 +20,8 @@
                         <b><u style="font-size: 20px;">@this.SongTitle</u></b>
                     </div>
                     <div class="col-md-4">
-                        <button type="button" class="btn btn-primary" style="float: right;" @onclick="ShowBossOptions">Options</button>
+                        <button type="button" class="btn btn-primary" style="float: right; margin-left: 5px;" @onclick="ShowBossOptions">Options</button>
+                        <button type="button" class="btn btn-danger" style="float: right;" @onclick="ClearChart">Clear Chart</button>
                     </div>
                 </div>
             </div>
@@ -178,7 +179,7 @@
         this.BeatService.UpdateCurrentBeats("3");
         //this.BeatService.CalculateOffset(this.BossChartService.GetBossNotes(this.Difficulty));
 
-        this.length = this.DisplayNotes.Count > 0 ? this.DisplayNotes["BossNote"][^1].HitTime : 5000;
+        this.length = this.DisplayNotes["BossNote"].Count > 0 ? this.DisplayNotes["BossNote"][^1].HitTime : 5000;
 
         this.AllNoteTypes = new Dictionary<string, string>
 {
@@ -532,5 +533,18 @@
         this.BeatService.UpdateCurrentBeats(keyboardEventArgs.Key);
 
         this.currentBeat = keyboardEventArgs.Key;
+    }
+
+    public void ClearChart()
+    {
+        this.DisplayNotes = new Dictionary<string, List<BossNoteDisplay>>
+        {
+            { "BossNote", new List<BossNoteDisplay>() },
+            { "PerformerNote", new List<BossNoteDisplay>() },
+            { "Tempo", new List<BossNoteDisplay>() },
+            { "DarkZone", new List<BossNoteDisplay>() }
+        };
+
+        this.StateHasChanged();
     }
 }

@@ -1,5 +1,6 @@
 using BlazorDownloadFile;
 using Blazored.Modal;
+using Blazored.Toast;
 using ElectronNET.API;
 using ElectronNET.API.Entities;
 using Microsoft.AspNetCore.Builder;
@@ -34,6 +35,8 @@ namespace ReChart
             services.AddSingleton<IMemoryChartService>(new MemoryChartService());
             services.AddSingleton<IBossChartService>(new BossChartService());
 
+            services.AddSingleton<ElectronService>();
+
             services.AddServerSideBlazor().AddCircuitOptions(o =>
             {
                 if (this.Environment.IsDevelopment()) //only add details when debugging
@@ -43,6 +46,7 @@ namespace ReChart
             });
 
             services.AddBlazorDownloadFile();
+            services.AddBlazoredToast();
             services.AddBlazoredModal();
         }
 
@@ -87,7 +91,9 @@ namespace ReChart
                 DarkTheme = true,
                 FullscreenWindowTitle = true,
                 Title = "Melody of Memory Re:Chart",
-                Icon = "/wwwroot/icon.ico"
+                Icon = "/wwwroot/icon.ico",
+                Width = 1920,
+                Height = 1080
             };
 
             var window = await Electron.WindowManager.CreateWindowAsync(options);

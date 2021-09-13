@@ -20,7 +20,8 @@
                         <b><u style="font-size: 20px;">@this.SongTitle</u></b>
                     </div>
                     <div class="col-md-4">
-                        <button type="button" class="btn btn-primary" style="float: right;" @onclick="ShowMemoryOptions">Options</button>
+                        <button type="button" class="btn btn-primary" style="float: right; margin-left: 5px;" @onclick="ShowMemoryOptions">Options</button>
+                        <button type="button" class="btn btn-danger" style="float: right;" @onclick="ClearChart">Clear Chart</button>
                     </div>
                 </div>
             </div>
@@ -134,12 +135,12 @@
 <br />
 
 @code {
-        [CascadingParameter] public IModalService Modal { get; set; }
+    [CascadingParameter] public IModalService Modal { get; set; }
 
-        [Parameter] public string Id { get; set; }
-        [Parameter] public string SongTitle { get; set; }
-        [Parameter] public Difficulty Difficulty { get; set; }
-        [Parameter] public Dictionary<string, List<MemoryNoteDisplay>> DisplayNotes { get; set; }
+    [Parameter] public string Id { get; set; }
+    [Parameter] public string SongTitle { get; set; }
+    [Parameter] public Difficulty Difficulty { get; set; }
+    [Parameter] public Dictionary<string, List<MemoryNoteDisplay>> DisplayNotes { get; set; }
 
     public string SelectedNoteType { get; set; }
 
@@ -172,7 +173,7 @@
         this.BeatService.UpdateCurrentBeats("3");
         //this.BeatService.CalculateOffset(this.MemoryChartService.GetMemoryNotes(this.Difficulty));
 
-        this.length = this.DisplayNotes.Count > 0 ? this.DisplayNotes["MemoryNote"][^1].HitTime : 5000;
+        this.length = this.DisplayNotes["MemoryNote"].Count > 0 ? this.DisplayNotes["MemoryNote"][^1].HitTime : 5000;
 
         this.AllNoteTypes = new Dictionary<string, string>
 {
@@ -485,5 +486,17 @@
         this.BeatService.UpdateCurrentBeats(keyboardEventArgs.Key);
 
         this.currentBeat = keyboardEventArgs.Key;
+    }
+
+    public void ClearChart()
+    {
+        this.DisplayNotes = new Dictionary<string, List<MemoryNoteDisplay>>
+        {
+            { "MemoryNote", new List<MemoryNoteDisplay>() },
+            { "PerformerNote", new List<MemoryNoteDisplay>() },
+            { "Tempo", new List<MemoryNoteDisplay>() }
+        };
+
+        this.StateHasChanged();
     }
 }

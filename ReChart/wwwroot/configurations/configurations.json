@@ -231,7 +231,6 @@
       "201": "Kairi III",
       "203": "Dark Domination",
       "204": "Part of Your World",
-      "205": "March Caprice",
       "206": "Beauty and the Beast"
     },
     "MemoryDive": {
@@ -252,7 +251,8 @@
       "137": "Monster Smash",
       "138": "Robot Overdrive",
       "139": "Let It Go",
-      "177": "Simple and Clean Intro"
+      "177": "Simple and Clean Intro",
+      "205": "March Caprice"
     },
     "BossBattle": {
       "085": "Guardando nel Buio",

@@ -1,0 +1,21 @@
+﻿@using ReChart.Logic;
+
+<div class="simple-form">
+    <button @onclick="(() => Save(true))" class="btn btn-success">Yes</button>
+    <button @onclick="(() => Save(false))" class="btn btn-danger">No</button>
+    <button @onclick="@(async () => await this.ModalInstance.CancelAsync())" class="btn btn-secondary" style="float: right;">Cancel</button>
+</div>
+
+@code {
+
+    [CascadingParameter] BlazoredModalInstance ModalInstance { get; set; }
+
+    protected override void OnInitialized()
+    {
+    }
+
+    protected async Task Save(bool isSaving)
+    {
+        await this.ModalInstance.CloseAsync(ModalResult.Ok(isSaving));
+    }
+}

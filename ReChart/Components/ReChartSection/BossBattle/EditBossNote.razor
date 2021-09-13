@@ -134,8 +134,8 @@
     private void BossNoteCopyChanged()
     {
         if (this.SelectedNoteType == "HoldStart")
-            this.EndHoldNotes = this.BossChartService.GetBossNotes(this.Difficulty).Where(x => x.BossNoteType == BossNoteType.HoldEnd).Where(x => x.HitTime >= this.BossNoteCopy.HitTime).ToList();
+            this.EndHoldNotes = this.BossChartService.GetBossNotes(this.Difficulty).Where(x => x.BossNoteType == BossNoteType.HoldEnd).Where(x => x.HitTime > this.BossNoteCopy.HitTime).ToList();
         else if (this.SelectedNoteType == "HoldEnd")
-            this.StartHoldNotes = this.BossChartService.GetBossNotes(this.Difficulty).Where(x => x.BossNoteType == BossNoteType.HoldStart).Where(x => x.HitTime <= this.BossNoteCopy.HitTime).ToList();
+            this.StartHoldNotes = this.BossChartService.GetBossNotes(this.Difficulty).Where(x => x.BossNoteType == BossNoteType.HoldStart).Where(x => x.HitTime < this.BossNoteCopy.HitTime).ToList();
     }
 }

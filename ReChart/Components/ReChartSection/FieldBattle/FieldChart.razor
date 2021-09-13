@@ -20,7 +20,8 @@
                         <b><u style="font-size: 20px;">@this.SongTitle</u></b>
                     </div>
                     <div class="col-md-4">
-                        <button type="button" class="btn btn-primary" style="float: right;" @onclick="ShowFieldOptions">Options</button>
+                        <button type="button" class="btn btn-primary" style="float: right; margin-left: 5px;" @onclick="ShowFieldOptions">Options</button>
+                        <button type="button" class="btn btn-danger" style="float: right;" @onclick="ClearChart">Clear Chart</button>
                     </div>
                 </div>
             </div>
@@ -181,10 +182,10 @@
         this.BeatService.UpdateCurrentBeats("3");
         this.BeatService.CalculateOffset(this.FieldChartService.GetFieldNotes(this.Difficulty), this.FieldChartService.GetFieldAssets(this.Difficulty));
 
-        this.length = this.DisplayNotes.Count > 0 ? this.DisplayNotes["FieldNote"][^1].HitTime : 5000;
+        this.length = this.DisplayNotes["FieldNote"].Count > 0 ? this.DisplayNotes["FieldNote"][^1].HitTime : 5000;
 
         this.AllNoteTypes = new Dictionary<string, string>
-{
+        {
             { "CommonEnemy", Utilities.GetImage(FieldModelType.CommonEnemy, 0, 0) },
             { "AerialCommonEnemy", Utilities.GetImage(FieldModelType.AerialCommonEnemy, 0, 0) },
             { "UncommonEnemy", Utilities.GetImage(FieldModelType.UncommonEnemy, 0, 0) },
@@ -531,5 +532,16 @@
         this.BeatService.UpdateCurrentBeats(keyboardEventArgs.Key);
 
         this.currentBeat = keyboardEventArgs.Key;
+    }
+
+    public void ClearChart()
+    {
+        this.DisplayNotes = new Dictionary<string, List<FieldNoteDisplay>>
+        {
+            { "FieldNote", new List<FieldNoteDisplay>() },
+            { "FieldAsset", new List<FieldNoteDisplay>() },
+            { "PerformerNote", new List<FieldNoteDisplay>() },
+            { "Tempo", new List<FieldNoteDisplay>() }
+        };
     }
 }

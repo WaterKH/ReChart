@@ -134,8 +134,8 @@
     private void MemoryNoteCopyChanged()
     {
         if (this.SelectedNoteType == "HoldStart")
-            this.EndHoldNotes = this.MemoryChartService.GetMemoryNotes(this.Difficulty).Where(x => x.MemoryNoteType == MemoryNoteType.HoldEnd).Where(x => x.HitTime >= this.MemoryNoteCopy.HitTime).ToList();
+            this.EndHoldNotes = this.MemoryChartService.GetMemoryNotes(this.Difficulty).Where(x => x.MemoryNoteType == MemoryNoteType.HoldEnd).Where(x => x.HitTime > this.MemoryNoteCopy.HitTime).ToList();
         else if (this.SelectedNoteType == "HoldEnd")
-            this.StartHoldNotes = this.MemoryChartService.GetMemoryNotes(this.Difficulty).Where(x => x.MemoryNoteType == MemoryNoteType.HoldStart).Where(x => x.HitTime <= this.MemoryNoteCopy.HitTime).ToList();
+            this.StartHoldNotes = this.MemoryChartService.GetMemoryNotes(this.Difficulty).Where(x => x.MemoryNoteType == MemoryNoteType.HoldStart).Where(x => x.HitTime < this.MemoryNoteCopy.HitTime).ToList();
     }
 }

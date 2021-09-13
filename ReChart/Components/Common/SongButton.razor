@@ -1,0 +1,29 @@
+﻿@using ReChart.Logic
+
+<div class="col-3" style="padding-left: 0px; padding-right: 0px">
+    <h5 style="text-align: center;"><b style="color: white;">@(this.SongName)</b></h5>
+    <button class="kh-button btn btn-outline-info" style="overflow: hidden;" @onclick="@InvokeParentMethod">
+        <div class="child-kh-button" style="background: url(@(this.GetImageFromSongName())); background-size: cover;" />
+        <div class="overlay">
+            <div class="kh-text">@this.FileName</div>
+        </div>
+    </button>
+    <br />
+</div>
+
+@code {
+    [Parameter] public string SongName { get; set; }
+    [Parameter] public string FileName { get; set; }
+
+    [Parameter] public Func<string, Task> ParentMethod { get; set; }
+
+    public string GetImageFromSongName()
+    {
+        return Utilities.GetImageFromSongName(this.FileName);
+    }
+
+    public async Task InvokeParentMethod()
+    {
+        await this.ParentMethod?.Invoke(this.FileName);
+    }
+}

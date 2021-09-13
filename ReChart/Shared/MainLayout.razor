@@ -1,5 +1,7 @@
 ﻿@inherits LayoutComponentBase
 
+@using Blazored.Toast.Configuration
+
 <div class="sidebar" style="width: 15%">
     <NavMenu />
 </div>
@@ -9,3 +11,5 @@
         @Body
     </div>
 </div>
+
+<BlazoredToasts Position="ToastPosition.BottomRight" ShowProgressBar="true" />
