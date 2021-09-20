@@ -20,7 +20,7 @@ namespace ReChart.Interfaces
 
         public BossNote LoadBossNote(Difficulty difficulty, int id);
 
-        public void SaveBossNote(ref BossNote bossNote, BossNote bossNoteCopy);
+        public void SaveBossNote(Difficulty difficulty, ref BossNote bossNote, BossNote bossNoteCopy);
 
         public void RemoveBossNote(Difficulty difficulty, int id);
 

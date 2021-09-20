@@ -88,8 +88,10 @@ namespace ReChart.Services
             return bossBattleSong.Notes.ToList()[id];
         }
 
-        public void SaveBossNote(ref BossNote bossNote, BossNote bossNoteCopy)
+        public void SaveBossNote(Difficulty difficulty, ref BossNote bossNote, BossNote bossNoteCopy)
         {
+            var bossBattleSong = (BossBattleSong)this.MusicFile.SongPositions.FirstOrDefault(x => x.Value.Difficulty == difficulty).Value;
+
             bossNote.AerialFlag = bossNoteCopy.AerialFlag;
             bossNote.BossNoteType = bossNoteCopy.BossNoteType;
             bossNote.EndHoldNote = bossNoteCopy.EndHoldNote;
@@ -109,6 +111,22 @@ namespace ReChart.Services
             bossNote.Unk7 = bossNoteCopy.Unk7;
             bossNote.Unk8 = bossNoteCopy.Unk8;
             bossNote.UnkFF = bossNoteCopy.UnkFF;
+
+            if (bossNoteCopy.EndHoldNoteIndex != -1)
+            {
+                bossNote.EndHoldNote = bossBattleSong.Notes.ElementAt(bossNoteCopy.EndHoldNoteIndex);
+
+                bossNote.EndHoldNote.StartHoldNote = bossNote;
+                bossNote.EndHoldNote.StartHoldNoteIndex = bossBattleSong.Notes.IndexOf(bossNote);
+            }
+
+            if (bossNoteCopy.StartHoldNoteIndex != -1)
+            {
+                bossNote.StartHoldNote = bossBattleSong.Notes.ElementAt(bossNoteCopy.StartHoldNoteIndex);
+
+                bossNote.StartHoldNote.EndHoldNote = bossNote;
+                bossNote.StartHoldNote.EndHoldNoteIndex = bossBattleSong.Notes.IndexOf(bossNote);
+            }
         }
 
         public void RemoveBossNote(Difficulty difficulty, int id)

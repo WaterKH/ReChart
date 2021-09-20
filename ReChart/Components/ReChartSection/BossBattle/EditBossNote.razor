@@ -99,7 +99,7 @@
 
     private async Task SaveBossNote()
     {
-        this.BossChartService.SaveBossNote(ref this.BossNote, this.BossNoteCopy);
+        this.BossChartService.SaveBossNote(this.Difficulty, ref this.BossNote, this.BossNoteCopy);
 
         await this.ModalInstance.CloseAsync(ModalResult.Ok<BossNote>(this.BossNote));
     }

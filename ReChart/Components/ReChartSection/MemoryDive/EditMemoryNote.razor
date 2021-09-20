@@ -99,7 +99,7 @@
 
     private async Task SaveMemoryNote()
     {
-        this.MemoryChartService.SaveMemoryNote(ref this.MemoryNote, this.MemoryNoteCopy);
+        this.MemoryChartService.SaveMemoryNote(this.Difficulty, ref this.MemoryNote, this.MemoryNoteCopy);
 
         await this.ModalInstance.CloseAsync(ModalResult.Ok<MemoryNote>(this.MemoryNote));
     }

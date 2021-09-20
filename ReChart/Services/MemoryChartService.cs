@@ -84,8 +84,10 @@ namespace ReChart.Services
             return memoryBattleSong.Notes.ToList()[id];
         }
 
-        public void SaveMemoryNote(ref MemoryNote memoryNote, MemoryNote memoryNoteCopy)
+        public void SaveMemoryNote(Difficulty difficulty, ref MemoryNote memoryNote, MemoryNote memoryNoteCopy)
         {
+            var memoryBattleSong = (MemoryDiveSong)this.MusicFile.SongPositions.FirstOrDefault(x => x.Value.Difficulty == difficulty).Value;
+
             memoryNote.AerialFlag = memoryNoteCopy.AerialFlag;
             memoryNote.MemoryNoteType = memoryNoteCopy.MemoryNoteType;
             memoryNote.EndHoldNote = memoryNoteCopy.EndHoldNote;
@@ -105,6 +107,22 @@ namespace ReChart.Services
             memoryNote.Unk7 = memoryNoteCopy.Unk7;
             memoryNote.Unk8 = memoryNoteCopy.Unk8;
             memoryNote.UnkFF = memoryNoteCopy.UnkFF;
+
+            if (memoryNoteCopy.EndHoldNoteIndex != -1)
+            {
+                memoryNote.EndHoldNote = memoryBattleSong.Notes.ElementAt(memoryNoteCopy.EndHoldNoteIndex);
+
+                memoryNote.EndHoldNote.StartHoldNote = memoryNote;
+                memoryNote.EndHoldNote.StartHoldNoteIndex = memoryBattleSong.Notes.IndexOf(memoryNote);
+            }
+
+            if (memoryNoteCopy.StartHoldNoteIndex != -1)
+            {
+                memoryNote.StartHoldNote = memoryBattleSong.Notes.ElementAt(memoryNoteCopy.StartHoldNoteIndex);
+
+                memoryNote.StartHoldNote.EndHoldNote = memoryNote;
+                memoryNote.StartHoldNote.EndHoldNoteIndex = memoryBattleSong.Notes.IndexOf(memoryNote);
+            }
         }
 
         public void RemoveMemoryNote(Difficulty difficulty, int id)

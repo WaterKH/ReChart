@@ -230,7 +230,7 @@ else
         {
             this.MusicFile = new SongProcessor().ProcessSong(this.fileName, true);// this.generateDevFile);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             ToastService.ShowError($"Error processing {this.fileName.Split('\\')[^1]}. Please ensure this file exists in your music folder.");
         }
@@ -251,13 +251,13 @@ else
 
             if (song.Count > 0)
             {
-                await BlazorDownloadFileService.DownloadFile($"{this.fileName}.recomp", song, contentType: "application/octet-stream");
+                await BlazorDownloadFileService.DownloadFile($"{this.fileName.Split('\\')[^1]}", song, contentType: "application/octet-stream");
 
-                //ToastService.ShowSuccess("Successfully Exported File!");
+                ToastService.ShowSuccess("Successfully Exported File!");
             }
             else
             {
-                //ToastService.ShowError("Error Exporting File..");
+                ToastService.ShowError("Error Exporting File...");
             }
         }
         catch (Exception ex)
