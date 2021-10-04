@@ -48,8 +48,25 @@
 
     private async Task PerformDecryptPatch()
     {
-        this.decryptPatchService.DecryptAssetBundles();
+        var decryptionResult = this.decryptPatchService.DecryptAssetBundles();
 
-        this.decryptPatchService.PatchGameAssembly(0xAC4730, new List<byte> { 0x48, 0x30, 0xC0, 0xC3 });
+        if (!decryptionResult.Contains("Decryption Complete!"))
+        {
+            ToastService.ShowError(decryptionResult);
+            return;
+        }
+
+        ToastService.ShowSuccess(decryptionResult);
+
+        var patchResult = this.decryptPatchService.PatchGameAssembly(0xAC4730, new List<byte> { 0x48, 0x30, 0xC0, 0xC3 });
+
+        if (!patchResult.Contains("GameAssembly.dll has been patched"))
+        {
+            ToastService.ShowError(patchResult);
+        }
+        else
+        {
+            ToastService.ShowSuccess(decryptionResult);
+        }
     }
 }
