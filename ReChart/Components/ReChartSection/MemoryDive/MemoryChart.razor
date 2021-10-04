@@ -1,4 +1,5 @@
-﻿@using MoMMusicAnalysis;
+﻿@using MoMMusicAnalysis.Song;
+@using MoMMusicAnalysis.Song.MemoryDive;
 @using ReChart.Logic;
 @using ReChart.Services;
 @using ReChart.Interfaces;
@@ -71,11 +72,11 @@
                         </div>
                     }
 
-                    @foreach (var beat in this.BeatService.CurrentBeats)
+                    @for (int i = 0; i < this.BeatService.CurrentBeats.Count; ++i)
                     {
-                        if (beat != null)
+                        if (this.BeatService.CurrentBeats[i] != null)
                         {
-                            <div style="display: inline-block; position: relative; float: left; background-color: @(beat.Color == System.Drawing.Color.MediumPurple ? "mediumpurple" : "purple"); width: 2pt; height: 15vh; left: @(beat.Location.X)px; top: -15vh;"></div>
+                            <div style="display: inline-block; position: relative; float: left; background-color: @(this.BeatService.CurrentBeats[i].Color == System.Drawing.Color.MediumPurple ? "mediumpurple" : "purple"); width: 2px; height: 100vh; left: @(this.BeatService.CurrentBeats[i].Location.X - (2 * i))px; top: -100vh;"></div>
                         }
                     }
                 </div>
@@ -94,6 +95,8 @@
                         <NoteChoices Title="Memory Notes" Type="MemoryNote" ImageTypes="@this.AllNoteTypes" @bind-ActiveNote="this.SelectedNoteType" SelectedNoteTypeChanged="this.SelectedNoteTypeChanged" />
                         <br />
                         <NoteChoices Title="Performer Notes" Type="PerformerNote" ImageTypes="@this.AllPerformerTypes" @bind-ActiveNote="this.SelectedNoteType" SelectedNoteTypeChanged="this.SelectedNoteTypeChanged" />
+                        <br />
+                        <NoteChoices Title="Tempo Note" Type="TempoNote" ImageTypes="@this.TempoNoteTypes" @bind-ActiveNote="this.SelectedNoteType" SelectedNoteTypeChanged="this.SelectedNoteTypeChanged" />
                     </div>
                 </div>
             </div>
@@ -147,6 +150,7 @@
     public Dictionary<string, string> AllNoteTypes { get; set; }
     public Dictionary<string, string> SwipeDirections { get; set; }
     public Dictionary<string, string> AllPerformerTypes { get; set; }
+    public Dictionary<string, string> TempoNoteTypes { get; set; }
 
     public int QuickPlaceTime { get; set; }
     public MemoryLane QuickPlaceLane { get; set; }
@@ -183,16 +187,21 @@
             { "Swipe", Utilities.GetImage(MemoryNoteType.Swipe) }
         };
 
+        this.TempoNoteTypes = new Dictionary<string, string>
+{
+            { "Tempo", "/images/ReChart/MemoryDive.png" }
+        };
+
         this.SwipeDirections = new Dictionary<string, string>
 {
-            { "Up", Utilities.GetImage(BossNoteType.Swipe) },
-            { "Right", Utilities.GetImage(BossNoteType.Swipe) },
-            { "Down", Utilities.GetImage(BossNoteType.Swipe) },
-            { "Left", Utilities.GetImage(BossNoteType.Swipe) }
+            { "Up", Utilities.GetImage(MemoryNoteType.Swipe) },
+            { "Right", Utilities.GetImage(MemoryNoteType.Swipe) },
+            { "Down", Utilities.GetImage(MemoryNoteType.Swipe) },
+            { "Left", Utilities.GetImage(MemoryNoteType.Swipe) }
         };
 
         this.ChartDisplays = new Dictionary<string, bool>
-    {
+{
             { "Notes", true },
             { "Performers", true },
             { "Tempos", true }
@@ -380,6 +389,9 @@
 
     protected void SelectedNoteTypeChanged(string type)
     {
+        if (type == "Cancel")
+            type = string.Empty;
+
         this.SelectedNoteType = type;
         this.ChartReference.FocusAsync();
 
@@ -393,6 +405,8 @@
                 this.PlaceholderDisplayNote.Image = this.AllNoteTypes[type];
             else if (this.AllPerformerTypes.ContainsKey(type))
                 this.PlaceholderDisplayNote.Image = this.AllPerformerTypes[type];
+            else if (this.TempoNoteTypes.ContainsKey(type))
+                this.PlaceholderDisplayNote.Image = this.TempoNoteTypes[type];
         }
     }
 
@@ -415,6 +429,14 @@
             // Add to display notes
             this.DisplayNotes["PerformerNote"].Add(new MemoryNoteDisplay { HitTime = time, Lane = lane, NoteIndex = this.DisplayNotes["PerformerNote"].Count, Image = Utilities.GetImage(performerType) });
         }
+        else if (modelType == "Tempo")
+        {
+            // Add to song notes
+            this.MemoryChartService.AddMemoryTempo(this.Difficulty, time, 500);
+
+            // Add to display notes
+            this.DisplayNotes["Tempo"].Add(new MemoryNoteDisplay { HitTime = time, Lane = MemoryLane.PlayerLeft, NoteIndex = this.DisplayNotes["Tempo"].Count, Image = this.TempoNoteTypes["Tempo"] });
+        }
     }
 
     protected void MouseOverChart(MouseEventArgs mouseEventArgs, MemoryLane lane)
@@ -430,6 +452,8 @@
                 this.PlaceholderDisplayNote.Image = this.AllNoteTypes[this.SelectedNoteType];
             else if (this.AllPerformerTypes.ContainsKey(this.SelectedNoteType))
                 this.PlaceholderDisplayNote.Image = this.AllPerformerTypes[this.SelectedNoteType];
+            else if (this.TempoNoteTypes.ContainsKey(this.SelectedNoteType))
+                this.PlaceholderDisplayNote.Image = this.TempoNoteTypes[this.SelectedNoteType];
         }
 
         this.PlaceholderDisplayNote.HitTime = ((int)mouseEventArgs.OffsetX) - 35;
@@ -491,7 +515,7 @@
     public void ClearChart()
     {
         this.DisplayNotes = new Dictionary<string, List<MemoryNoteDisplay>>
-        {
+{
             { "MemoryNote", new List<MemoryNoteDisplay>() },
             { "PerformerNote", new List<MemoryNoteDisplay>() },
             { "Tempo", new List<MemoryNoteDisplay>() }

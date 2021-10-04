@@ -1,4 +1,4 @@
-﻿using MoMMusicAnalysis;
+﻿using MoMMusicAnalysis.Song.FieldBattle;
 
 namespace ReChart.ViewModels.ReChart
 {

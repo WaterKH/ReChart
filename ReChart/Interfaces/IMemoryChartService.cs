@@ -1,6 +1,10 @@
 using MoMMusicAnalysis;
 using System.Collections.Generic;
 using ReChart.ViewModels.ReChart;
+using MoMMusicAnalysis.Song;
+using MoMMusicAnalysis.Song.MemoryDive;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace ReChart.Interfaces
 {
@@ -20,7 +24,7 @@ namespace ReChart.Interfaces
 
         public MemoryNote LoadMemoryNote(Difficulty difficulty, int id);
 
-        public void SaveMemoryNote(ref MemoryNote memoryNote, MemoryNote memoryNoteCopy);
+        public void SaveMemoryNote(Difficulty difficulty, ref MemoryNote memoryNote, MemoryNote memoryNoteCopy);
 
         public void RemoveMemoryNote(Difficulty difficulty, int id);
 
@@ -45,5 +49,7 @@ namespace ReChart.Interfaces
         public int GetNoteIndex(Difficulty difficulty, MemoryNote memoryNote);
 
         public List<byte> RecompileMemoryDiveSongs();
+
+        public Task<List<byte>> ReplaceMemoryDiveMovie(string fileName, Stream data);
     }
 }

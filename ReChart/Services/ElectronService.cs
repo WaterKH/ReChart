@@ -10,7 +10,7 @@ namespace ReChart.Services
 {
     public class ElectronService : IDisposable
     {
-        public static string VERSION { get; } = "0.1.1";
+        public static string VERSION { get; } = "0.1.2";
         public string UpdateInfo { get; set; } = VERSION;
         public bool Resized { get; set; } = false;
         Task<UpdateCheckResult> resultTask;

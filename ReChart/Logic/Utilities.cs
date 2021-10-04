@@ -1,6 +1,12 @@
 ﻿using MoMMusicAnalysis;
+using MoMMusicAnalysis.Song;
+using MoMMusicAnalysis.Song.BossBattle;
+using MoMMusicAnalysis.Song.FieldBattle;
+using MoMMusicAnalysis.Song.MemoryDive;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace ReChart.Logic
@@ -11,6 +17,33 @@ namespace ReChart.Logic
         //    {
         //        return false;//(Control.ModifierKeys & Keys.Control) == Keys.Control;
         //    }
+
+        public static void ConvertAndCopyFiles()
+        {
+            var files = Directory.GetFiles($"{Settings.Configurations.MelodyOfMemoryRootFolder}\\KINGDOM HEARTS Melody of Memory_Data\\StreamingAssets\\AssetBundles", "*", SearchOption.AllDirectories);
+            var hex = "";
+            byte[] bytes;
+
+            foreach (var file in files.Where(x => x.Contains("_decrypted")))
+            {
+                FileInfo info = new FileInfo(file);
+
+                using (var stream = new StreamReader(info.FullName))
+                {
+                    hex = stream.ReadToEnd();
+                }
+
+                if (hex.Substring(0, 5) == "Unity")
+                    continue;
+
+                bytes = Enumerable.Range(0, hex.Length / 2).Select(x => Convert.ToByte(hex.Substring(x * 2, 2), 16)).ToArray();
+
+                var originalFile = info.FullName.Replace("_decrypted", "");
+
+                File.Copy(originalFile, $"{originalFile}_original");
+                File.WriteAllBytes(originalFile, bytes);
+            }
+        }
 
 
         public static string GetEnumName(FieldModelType type, int noteType, int altModel)
@@ -227,10 +260,10 @@ namespace ReChart.Logic
                     imagePath = "ReChart/Worlds/TRIPWORLD0000010.png";
                     break;
                 case "music0000006":
-                    imagePath = "ReChart/Worlds/TRIPWORLD0000004.png";
+                    imagePath = "ReChart/Worlds/TRIPWORLD0000008.png";
                     break;
                 case "music0000007":
-                    imagePath = "ReChart/Worlds/TRIPWORLD0000004.png";
+                    imagePath = "ReChart/Worlds/TRIPWORLD0000008.png";
                     break;
                 case "music0000008":
                     imagePath = "ReChart/Worlds/TRIPWORLD0000006.png";

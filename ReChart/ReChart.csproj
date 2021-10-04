@@ -3,8 +3,9 @@
     <TargetFramework>net5.0</TargetFramework>
     <AssemblyName>ReChart</AssemblyName>
     <ApplicationIcon>Icon.ico</ApplicationIcon>
-    <Version>0.1.1</Version>
-    <Description>0.1.1 - Notes in commit</Description>
+    <Version>0.1.2</Version>
+    <Description>0.1.2 - Added support for changing Memory Dive Movies
+0.1.1 - Notes in commit</Description>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Components\ReChartSection\FieldBattle\FieldChartNote.razor~RF17121d83.TMP" />
@@ -22,11 +23,18 @@
     <PackageReference Include="Blazored.Modal" Version="6.0.1" />
     <PackageReference Include="Blazored.Toast" Version="3.1.2" />
     <PackageReference Include="ElectronNET.API" Version="13.5.1" />
-    <PackageReference Include="MoMMusicAnalysis" Version="1.2.1" />
+    <PackageReference Include="MoMMusicAnalysis" Version="1.2.3" />
+    <PackageReference Include="Reloaded.Injector" Version="1.2.4" />
   </ItemGroup>
   <ItemGroup>
     <Content Update="electron.manifest.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot\configurations\NoPath_AssetBundleNames.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot\DecryptAssetBundles.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Update="wwwroot\images\ReChart\WaterKH.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

@@ -2,6 +2,7 @@
 @page "/rechart"
 
 @using MoMMusicAnalysis;
+@using MoMMusicAnalysis.Song;
 @using Microsoft.Extensions.Logging;
 @using ReChart.Interfaces;
 @using ReChart.Logic;
@@ -24,7 +25,18 @@
             <div class="col-md-4">
                 <button type="button" class="btn btn-primary" @onclick="(async () => await ClearChartManagers(true))" style="float: left; margin-left: 5px;">Close Song</button>
             </div>
-            <div class="col-md-4"></div>
+            <div class="col-md-4">
+                @if (this.MemoryChartService.GetMusicFile() != null)
+                {
+                    <label for="file" class="btn btn-primary" style="text-decoration-color: white;">Change MemoryDive Movie</label>
+                    <input id="file" type="file" style="visibility:hidden;" @onchange="((ChangeEventArgs e) => this.ChangeMemoryDiveMovie(e))" />
+
+                    @if (this.IsUpdatingMemoryDiveMovie)
+                    {
+                        <label style="color: white; display: inline-block;">Updating MemoryDive Movie...</label>
+                    }
+                }
+            </div>
             <div class="col-md-4">
                 <button type="button" class="btn btn-success" @onclick="SaveSong" style="float: right; margin-left: 5px;">Save Song</button>
             </div>
@@ -197,6 +209,7 @@ else
     [CascadingParameter] public IModalService Modal { get; set; }
 
     public MusicFile MusicFile { get; set; }
+    public bool IsUpdatingMemoryDiveMovie { get; set; }
 
     public TabControl DifficultyControl { get; set; } = new TabControl();
 
@@ -230,7 +243,7 @@ else
         {
             this.MusicFile = new SongProcessor().ProcessSong(this.fileName, true);// this.generateDevFile);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             ToastService.ShowError($"Error processing {this.fileName.Split('\\')[^1]}. Please ensure this file exists in your music folder.");
         }
@@ -251,13 +264,13 @@ else
 
             if (song.Count > 0)
             {
-                await BlazorDownloadFileService.DownloadFile($"{this.fileName}.recomp", song, contentType: "application/octet-stream");
+                await BlazorDownloadFileService.DownloadFile($"{this.fileName.Split('\\')[^1]}", song, contentType: "application/octet-stream");
 
-                //ToastService.ShowSuccess("Successfully Exported File!");
+                ToastService.ShowSuccess("Successfully Exported File!");
             }
             else
             {
-                //ToastService.ShowError("Error Exporting File..");
+                ToastService.ShowError("Error Exporting File...");
             }
         }
         catch (Exception ex)
@@ -350,5 +363,31 @@ else
 
         Settings.Configurations.MelodyOfMemoryRootFolder = string.Join('\\', fullPath.Split("\\").SkipLast(1));
         Settings.SaveSettings();
+    }
+
+    private async Task ChangeMemoryDiveMovie(ChangeEventArgs args)
+    {
+        this.IsUpdatingMemoryDiveMovie = true;
+
+        try
+        {
+            var fullPath = await JsRuntime.InvokeAsync<string>("getFolderName", "file");
+            var filePath = $"{string.Join('\\', fullPath.Split("\\").SkipLast(1))}\\{args.Value.ToString().Split('\\')[^1]}";
+
+            using FileStream data = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+            var pathToMovies = Settings.Configurations.MelodyOfMemoryRootFolder + "\\KINGDOM HEARTS Melody of Memory_Data\\StreamingAssets\\AssetBundles\\regioncommon\\languagecommon\\movie";
+
+            var movieFile = await this.MemoryChartService.ReplaceMemoryDiveMovie($"{pathToMovies}\\{this.fileName.Split('\\')[^1]}", data); // 50 Mbs
+
+            await BlazorDownloadFileService.DownloadFile($"{this.fileName.Split('\\')[^1]}", movieFile, 100000, contentType: "application/octet-stream");
+
+            ToastService.ShowSuccess("Successfully Exported File!");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError("Error Exporting File...");
+        }
+
+        this.IsUpdatingMemoryDiveMovie = false;
     }
 }

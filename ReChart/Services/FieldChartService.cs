@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ReChart.Interfaces;
+using MoMMusicAnalysis.Song;
+using MoMMusicAnalysis.Song.FieldBattle;
 
 namespace ReChart.Services
 {
@@ -139,6 +141,8 @@ namespace ReChart.Services
 
         public void SaveFieldNote(Difficulty difficulty, ref FieldNote fieldNote, FieldNote fieldNoteCopy)
         {
+            var fieldBattleSong = (FieldBattleSong)this.MusicFile.SongPositions.FirstOrDefault(x => x.Value.Difficulty == difficulty).Value;
+
             fieldNote.AerialAndCrystalCounter = fieldNoteCopy.AerialAndCrystalCounter;
             fieldNote.AerialFlag = fieldNoteCopy.AerialFlag;
             fieldNote.AnimationReference = fieldNoteCopy.AnimationReference;
@@ -161,9 +165,27 @@ namespace ReChart.Services
             fieldNote.Unk4 = fieldNoteCopy.Unk4;
             fieldNote.Unk5 = fieldNoteCopy.Unk5;
             fieldNote.Unk6 = fieldNoteCopy.Unk6;
-            
 
-            var fieldBattleSong = (FieldBattleSong)this.MusicFile.SongPositions.FirstOrDefault(x => x.Value.Difficulty == difficulty).Value;
+            if (fieldNoteCopy.NextEnemyNoteIndex != -1)
+            {
+                fieldNote.NextEnemyNote = fieldBattleSong.Notes.ElementAt(fieldNoteCopy.NextEnemyNoteIndex);
+
+                fieldNote.NextEnemyNote.PreviousEnemyNote = fieldNote;
+                fieldNote.NextEnemyNote.PreviousEnemyNoteIndex = fieldBattleSong.Notes.IndexOf(fieldNote);
+            }
+
+            if (fieldNoteCopy.PreviousEnemyNoteIndex != -1)
+            {
+                fieldNote.PreviousEnemyNote = fieldBattleSong.Notes.ElementAt(fieldNoteCopy.PreviousEnemyNoteIndex);
+
+                fieldNote.PreviousEnemyNote.NextEnemyNote = fieldNote;
+                fieldNote.PreviousEnemyNote.NextEnemyNoteIndex = fieldBattleSong.Notes.IndexOf(fieldNote);
+            }
+
+            if (fieldNoteCopy.ProjectileOriginNoteIndex != -1)
+                fieldNote.ProjectileOriginNote = fieldBattleSong.Notes.ElementAt(fieldNoteCopy.ProjectileOriginNoteIndex);
+
+
             var anims = fieldBattleSong.Notes.SelectMany(x => x.Animations).Concat(fieldBattleSong.FieldAssets.SelectMany(x => x.Animations));
 
             fieldNote.AnimationReference = anims.OrderBy(x => x.AnimationEndTime).ThenBy(x => x.AnimationStartTime).ToList().IndexOf(fieldNote.Animations.LastOrDefault());

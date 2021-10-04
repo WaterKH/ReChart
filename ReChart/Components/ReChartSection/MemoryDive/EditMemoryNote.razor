@@ -1,4 +1,5 @@
-﻿@using MoMMusicAnalysis;
+﻿@using MoMMusicAnalysis.Song;
+@using MoMMusicAnalysis.Song.MemoryDive;
 @using ReChart.Interfaces;
 
 @inject IMemoryChartService MemoryChartService
@@ -67,7 +68,7 @@
     <button @onclick="DeleteMemoryNote" class="btn btn-danger">Delete</button>
     <button @onclick="@(async () => await this.ModalInstance.CancelAsync())" class="btn btn-secondary" style="float: right;">Cancel</button>
 </div>
-    
+
 
 @code {
 
@@ -93,13 +94,13 @@
         this.MemoryNoteCopy = this.MemoryNote.Copy();
 
         this.SelectedNoteType = this.MemoryNote.MemoryNoteType.ToString();
-        
+
         this.MemoryNoteCopyChanged();
     }
 
     private async Task SaveMemoryNote()
     {
-        this.MemoryChartService.SaveMemoryNote(ref this.MemoryNote, this.MemoryNoteCopy);
+        this.MemoryChartService.SaveMemoryNote(this.Difficulty, ref this.MemoryNote, this.MemoryNoteCopy);
 
         await this.ModalInstance.CloseAsync(ModalResult.Ok<MemoryNote>(this.MemoryNote));
     }
