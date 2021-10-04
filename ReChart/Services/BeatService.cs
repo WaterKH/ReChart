@@ -1,4 +1,7 @@
-﻿using MoMMusicAnalysis;
+﻿using MoMMusicAnalysis.Song;
+using MoMMusicAnalysis.Song.FieldBattle;
+using MoMMusicAnalysis.Song.BossBattle;
+using MoMMusicAnalysis.Song.MemoryDive;
 using ReChart.Enums;
 using ReChart.Logic;
 using ReChart.ViewModels.ReChart;

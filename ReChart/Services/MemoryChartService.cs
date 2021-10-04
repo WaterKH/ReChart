@@ -5,6 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ReChart.Interfaces;
+using MoMMusicAnalysis.Song.MemoryDive;
+using MoMMusicAnalysis.Song;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace ReChart.Services
 {
@@ -139,7 +143,8 @@ namespace ReChart.Services
                 HitTime = time,
                 Lane = lane,
                 PerformerType = modelType,
-                DuplicateType = modelType
+                DuplicateType = modelType,
+                Unk1 = 1 // Aerial Flag, always true
             };
 
             var memoryBattleSong = (MemoryDiveSong)this.MusicFile.SongPositions.FirstOrDefault(x => x.Value.Difficulty == difficulty).Value;
@@ -395,5 +400,55 @@ namespace ReChart.Services
         }
 
         #endregion Recompile Memory Dive Music File
+
+        public async Task<List<byte>> ReplaceMemoryDiveMovie(string fileName, Stream data)
+        {
+            var movieProcessor = new MovieProcessor();
+
+            var movieFile = movieProcessor.ProcessMovie(fileName);
+
+            using var memoryStream = new MemoryStream();
+            await data.CopyToAsync(memoryStream);
+
+            var differentMovieFile = new MovieFile
+            {
+                FileName = movieFile.FileName,
+                Header = movieFile.Header.Copy(),
+                AssetPositions = movieFile.AssetPositions,
+                MovieData = memoryStream.ToArray().ToList()
+            };
+
+            differentMovieFile.Header.EntireFileSize -= movieFile.MovieData.Count;
+            differentMovieFile.Header.EntireFileSize += differentMovieFile.MovieData.Count;
+
+            differentMovieFile.Header.CompleteFileSize -= movieFile.MovieData.Count;
+            differentMovieFile.Header.CompleteFileSize += differentMovieFile.MovieData.Count;
+
+            differentMovieFile.AssetPositions.FirstOrDefault(x => x.Value.Length == 0x5B).Value.MovieSize = differentMovieFile.MovieData.Count;
+
+            // Calculate the header subsize
+            var length = differentMovieFile.Header.EntireFileSize - (0x31 + movieFile.Header.NextSize1);
+
+            differentMovieFile.Header.FileSizeCount = (length / 0x20000) + 1;
+            differentMovieFile.Header.FileSizes.Clear();
+
+            for (int i = 0; i < differentMovieFile.Header.FileSizeCount; ++i)
+            {
+                if (i != differentMovieFile.Header.FileSizeCount - 1)
+                {
+                    differentMovieFile.Header.FileSizes.Add(new MoMMusicAnalysis.Movie.FileSize { MainFileSize1 = 0x20000, MainFileSize2 = 0x20000, EmptyData = 0 });
+                }
+                else
+                {
+                    var temp = length - ((differentMovieFile.Header.FileSizeCount - 1) * 0x20000);
+                    differentMovieFile.Header.FileSizes.Add(new MoMMusicAnalysis.Movie.FileSize { MainFileSize1 = temp, MainFileSize2 = temp, EmptyData = 0 });
+                }
+            }
+
+            differentMovieFile.Header.NextSize1 = 0x14 + (0x0A * differentMovieFile.Header.FileSizeCount) + 0x7F;
+            differentMovieFile.Header.NextSize2 = differentMovieFile.Header.NextSize1;
+
+            return differentMovieFile.RecompileMovieFile();
+        }
     }
 }

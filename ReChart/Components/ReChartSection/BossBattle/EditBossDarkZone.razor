@@ -1,4 +1,5 @@
-﻿@using MoMMusicAnalysis;
+﻿@using MoMMusicAnalysis.Song;
+@using MoMMusicAnalysis.Song.BossBattle;
 @using ReChart.Interfaces;
 
 @inject IBossChartService BossChartService
@@ -34,7 +35,7 @@
 
 
     public BossDarkZone DarkZone;
-    private BossDarkZone DarkZoneCopy{ get; set; }
+    private BossDarkZone DarkZoneCopy { get; set; }
 
 
     protected override void OnInitialized()

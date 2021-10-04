@@ -1,4 +1,5 @@
-﻿@using MoMMusicAnalysis;
+﻿@using MoMMusicAnalysis.Song;
+@using MoMMusicAnalysis.Song.BossBattle;
 @using ReChart.Logic;
 @using ReChart.Services;
 @using ReChart.Interfaces;
@@ -195,7 +196,7 @@
         };
 
         this.TempoNoteTypes = new Dictionary<string, string>
-        {
+    {
             { "Tempo", "/images/ReChart/BossBattle.png" }
         };
 
@@ -208,7 +209,7 @@
         };
 
         this.ChartDisplays = new Dictionary<string, bool>
-    {
+{
             { "Notes", true },
             { "Performers", true },
             { "DarkZones", true },
@@ -435,6 +436,9 @@
 
     protected void SelectedNoteTypeChanged(string type)
     {
+        if (type == "Cancel")
+            type = string.Empty;
+
         this.SelectedNoteType = type;
         this.ChartReference.FocusAsync();
 
@@ -558,7 +562,7 @@
     public void ClearChart()
     {
         this.DisplayNotes = new Dictionary<string, List<BossNoteDisplay>>
-        {
+    {
             { "BossNote", new List<BossNoteDisplay>() },
             { "PerformerNote", new List<BossNoteDisplay>() },
             { "Tempo", new List<BossNoteDisplay>() },

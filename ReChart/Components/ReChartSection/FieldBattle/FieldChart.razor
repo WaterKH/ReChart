@@ -1,4 +1,5 @@
-﻿@using MoMMusicAnalysis;
+﻿@using MoMMusicAnalysis.Song;
+@using MoMMusicAnalysis.Song.FieldBattle;
 @using ReChart.Logic;
 @using ReChart.Services;
 @using ReChart.Interfaces;
@@ -188,7 +189,7 @@
         this.length = this.DisplayNotes["FieldNote"].Count > 0 ? this.DisplayNotes["FieldNote"][^1].HitTime : 5000;
 
         this.AllNoteTypes = new Dictionary<string, string>
-        {
+    {
             { "CommonEnemy", Utilities.GetImage(FieldModelType.CommonEnemy, 0, 0) },
             { "AerialCommonEnemy", Utilities.GetImage(FieldModelType.AerialCommonEnemy, 0, 0) },
             { "UncommonEnemy", Utilities.GetImage(FieldModelType.UncommonEnemy, 0, 0) },
@@ -212,7 +213,7 @@
         };
 
         this.TempoNoteTypes = new Dictionary<string, string>
-        {
+    {
             { "Tempo", "/images/ReChart/FieldBattle.png" }
         };
 
@@ -226,7 +227,7 @@
         //};
 
         this.ChartDisplays = new Dictionary<string, bool>
-    {
+{
             { "Notes", true },
             { "Assets", true },
             { "Performers", true },
@@ -434,6 +435,9 @@
 
     protected void SelectedNoteTypeChanged(string type)
     {
+        if (type == "Cancel")
+            type = string.Empty;
+
         this.SelectedNoteType = type;
         this.ChartReference.FocusAsync();
 
@@ -557,7 +561,7 @@
     public void ClearChart()
     {
         this.DisplayNotes = new Dictionary<string, List<FieldNoteDisplay>>
-        {
+    {
             { "FieldNote", new List<FieldNoteDisplay>() },
             { "FieldAsset", new List<FieldNoteDisplay>() },
             { "PerformerNote", new List<FieldNoteDisplay>() },

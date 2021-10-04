@@ -5,6 +5,8 @@ using MoMMusicAnalysis;
 using ReChart.Logic;
 using System.Collections.Generic;
 using ReChart.ViewModels.ReChart;
+using MoMMusicAnalysis.Song;
+using MoMMusicAnalysis.Song.FieldBattle;
 
 namespace ReChart.Interfaces
 {

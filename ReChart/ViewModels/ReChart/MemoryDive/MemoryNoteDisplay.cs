@@ -1,4 +1,4 @@
-﻿using MoMMusicAnalysis;
+﻿using MoMMusicAnalysis.Song.MemoryDive;
 
 namespace ReChart.ViewModels.ReChart
 {

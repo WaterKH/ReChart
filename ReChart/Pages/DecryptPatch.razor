@@ -1,0 +1,55 @@
+﻿@page "/decryptpatch"
+
+@using Microsoft.Extensions.Logging;
+@using ReChart.Logic;
+@using ReChart.Services;
+
+@inject ILogger<ReChartPage> logger
+@inject IToastService ToastService
+@inject IJSRuntime JsRuntime
+
+
+<div class="simple-form">
+    <div class="form-group" style="padding-top: 5px;">
+        <label for="files" class="btn btn-primary" style="text-decoration-color: white;">Change Root Folder Directory</label>
+        <input id="files" type="file" webkitdirectory style="visibility:hidden;" @onchange="((ChangeEventArgs e) => this.UpdateFolder(e))" />
+
+        <label for="rootFolder" style="color: #acb2b7; margin-left: -300px;"><b>Melody of Memory Root Folder:</b> @Settings.Configurations.MelodyOfMemoryRootFolder</label>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(Settings.Configurations.MelodyOfMemoryRootFolder))
+{
+    <hr />
+
+    <div class="simple-form">
+        <button class="btn btn-primary" @onclick="PerformDecryptPatch">Decrypt Assets & Patch Game</button>
+    </div>
+}
+
+@code {
+
+    private DecryptPatchService decryptPatchService;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        this.decryptPatchService = new DecryptPatchService();
+    }
+
+    private async Task UpdateFolder(ChangeEventArgs e)
+    {
+        var fullPath = await JsRuntime.InvokeAsync<string>("getFolderName", "files");
+
+        Settings.Configurations.MelodyOfMemoryRootFolder = string.Join('\\', fullPath.Split("\\").SkipLast(1));
+        Settings.SaveSettings();
+    }
+
+    private async Task PerformDecryptPatch()
+    {
+        this.decryptPatchService.DecryptAssetBundles();
+
+        this.decryptPatchService.PatchGameAssembly(0xAC4730, new List<byte> { 0x48, 0x30, 0xC0, 0xC3 });
+    }
+}

@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ReChart.Interfaces;
+using MoMMusicAnalysis.Song;
+using MoMMusicAnalysis.Song.FieldBattle;
 
 namespace ReChart.Services
 {

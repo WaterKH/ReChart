@@ -1,4 +1,5 @@
-﻿@using MoMMusicAnalysis;
+﻿@using MoMMusicAnalysis.Song;
+@using MoMMusicAnalysis.Song.BossBattle;
 @using ReChart.Interfaces;
 
 @inject IBossChartService BossChartService
@@ -67,7 +68,7 @@
     <button @onclick="DeleteBossNote" class="btn btn-danger">Delete</button>
     <button @onclick="@(async () => await this.ModalInstance.CancelAsync())" class="btn btn-secondary" style="float: right;">Cancel</button>
 </div>
-    
+
 
 @code {
 
@@ -93,7 +94,7 @@
         this.BossNoteCopy = this.BossNote.Copy();
 
         this.SelectedNoteType = this.BossNote.BossNoteType.ToString();
-        
+
         this.BossNoteCopyChanged();
     }
 

@@ -1,6 +1,8 @@
 using MoMMusicAnalysis;
 using System.Collections.Generic;
 using ReChart.ViewModels.ReChart;
+using MoMMusicAnalysis.Song;
+using MoMMusicAnalysis.Song.BossBattle;
 
 namespace ReChart.Interfaces
 {

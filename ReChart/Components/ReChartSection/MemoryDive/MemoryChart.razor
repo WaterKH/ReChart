@@ -1,4 +1,5 @@
-﻿@using MoMMusicAnalysis;
+﻿@using MoMMusicAnalysis.Song;
+@using MoMMusicAnalysis.Song.MemoryDive;
 @using ReChart.Logic;
 @using ReChart.Services;
 @using ReChart.Interfaces;
@@ -179,7 +180,7 @@
         this.length = this.DisplayNotes["MemoryNote"].Count > 0 ? this.DisplayNotes["MemoryNote"][^1].HitTime : 5000;
 
         this.AllNoteTypes = new Dictionary<string, string>
-        {
+{
             { "Normal", Utilities.GetImage(MemoryNoteType.Normal) },
             { "HoldStart", Utilities.GetImage(MemoryNoteType.HoldStart) },
             { "HoldEnd", Utilities.GetImage(MemoryNoteType.HoldEnd) },
@@ -187,20 +188,20 @@
         };
 
         this.TempoNoteTypes = new Dictionary<string, string>
-        {
+{
             { "Tempo", "/images/ReChart/MemoryDive.png" }
         };
 
         this.SwipeDirections = new Dictionary<string, string>
 {
-            { "Up", Utilities.GetImage(BossNoteType.Swipe) },
-            { "Right", Utilities.GetImage(BossNoteType.Swipe) },
-            { "Down", Utilities.GetImage(BossNoteType.Swipe) },
-            { "Left", Utilities.GetImage(BossNoteType.Swipe) }
+            { "Up", Utilities.GetImage(MemoryNoteType.Swipe) },
+            { "Right", Utilities.GetImage(MemoryNoteType.Swipe) },
+            { "Down", Utilities.GetImage(MemoryNoteType.Swipe) },
+            { "Left", Utilities.GetImage(MemoryNoteType.Swipe) }
         };
 
         this.ChartDisplays = new Dictionary<string, bool>
-    {
+{
             { "Notes", true },
             { "Performers", true },
             { "Tempos", true }
@@ -388,6 +389,9 @@
 
     protected void SelectedNoteTypeChanged(string type)
     {
+        if (type == "Cancel")
+            type = string.Empty;
+
         this.SelectedNoteType = type;
         this.ChartReference.FocusAsync();
 
@@ -511,7 +515,7 @@
     public void ClearChart()
     {
         this.DisplayNotes = new Dictionary<string, List<MemoryNoteDisplay>>
-        {
+{
             { "MemoryNote", new List<MemoryNoteDisplay>() },
             { "PerformerNote", new List<MemoryNoteDisplay>() },
             { "Tempo", new List<MemoryNoteDisplay>() }
